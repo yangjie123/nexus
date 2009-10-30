@@ -34,6 +34,16 @@ public class ReadLockingContentLocator
         return new ReadLockingInputStream( wrappedUid, wrappedLocator.getContent() );
     }
 
+    public long getLength()
+    {
+        return wrappedLocator.getLength();
+    }
+
+    public void setLength( long len )
+    {
+        wrappedLocator.setLength( len );
+    }
+
     public String getMimeType()
     {
         return wrappedLocator.getMimeType();

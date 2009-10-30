@@ -215,11 +215,6 @@ public abstract class AbstractStorageItem
         return created;
     }
 
-    /**
-     * Sets the created.
-     * 
-     * @param created the new created
-     */
     public void setCreated( long created )
     {
         this.created = created;
@@ -230,11 +225,6 @@ public abstract class AbstractStorageItem
         return modified;
     }
 
-    /**
-     * Sets the modified.
-     * 
-     * @param modified the new modified
-     */
     public void setModified( long modified )
     {
         this.modified = modified;

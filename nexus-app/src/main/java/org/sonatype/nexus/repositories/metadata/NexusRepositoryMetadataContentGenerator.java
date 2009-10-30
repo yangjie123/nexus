@@ -55,8 +55,6 @@ public class NexusRepositoryMetadataContentGenerator
                 result = new StringContentLocator( body.replace( "@rootUrl@", "" ) );
             }
 
-            item.setLength( result.getByteArray().length );
-
             return result;
         }
         catch ( IOException e )

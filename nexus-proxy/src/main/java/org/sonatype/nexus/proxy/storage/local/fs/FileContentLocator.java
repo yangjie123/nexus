@@ -18,7 +18,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.sonatype.nexus.proxy.item.ContentLocator;
+import org.sonatype.nexus.proxy.item.AbstractContentLocator;
 
 /**
  * A content locator that emits a InputStream using a File. Reusable.
@@ -26,30 +26,23 @@ import org.sonatype.nexus.proxy.item.ContentLocator;
  * @author cstamas
  */
 public class FileContentLocator
-    implements ContentLocator
+    extends AbstractContentLocator
 {
     private final File file;
 
-    private final String mimeType;
-
     public FileContentLocator( File file, String mimeType )
     {
-        super();
+        super( mimeType, file.length() );
+        
+        assert file.isFile();
 
         this.file = file;
-
-        this.mimeType = mimeType;
     }
 
     public InputStream getContent()
         throws IOException
     {
         return new FileInputStream( file );
-    }
-
-    public String getMimeType()
-    {
-        return mimeType;
     }
 
     public boolean isReusable()
@@ -61,5 +54,4 @@ public class FileContentLocator
     {
         return file;
     }
-
 }

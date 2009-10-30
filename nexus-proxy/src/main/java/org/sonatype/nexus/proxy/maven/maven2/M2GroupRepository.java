@@ -309,8 +309,6 @@ public class M2GroupRepository
         DefaultStorageCompositeFileItem result =
             new DefaultStorageCompositeFileItem( this, request, true, false, contentLocator, sources );
 
-        result.setLength( content.length );
-
         result.getItemContext().put( CTX_TRANSITIVE_ITEM, Boolean.TRUE );
 
         return result;

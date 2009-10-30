@@ -34,6 +34,12 @@ public class DefaultStorageFileItem
     /** The input stream. */
     private transient ContentLocator contentLocator;
 
+    /**
+     * This is here for backward compatibility only, to enable XStream to load up the old XML attributes.
+     * 
+     * @deprecated The length is now coming from ContentLocator, see getLength() method body.
+     */
+    // DO NOT REMOVE, READ ABOVE!
     private long length;
 
     /**
@@ -41,6 +47,7 @@ public class DefaultStorageFileItem
      * 
      * @deprecated The mime-type is now coming from ContentLocator, see getMimeType() method body.
      */
+    // DO NOT REMOVE, READ ABOVE!
     private String mimeType;
 
     /**
@@ -100,12 +107,7 @@ public class DefaultStorageFileItem
 
     public long getLength()
     {
-        return length;
-    }
-
-    public void setLength( long length )
-    {
-        this.length = length;
+        return getContentLocator().getLength();
     }
 
     public String getMimeType()

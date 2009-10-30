@@ -175,13 +175,7 @@ public class CommonsHttpClientRemoteStorage
 
                 DefaultStorageFileItem httpItem =
                     new DefaultStorageFileItem( repository, request, true, true, new PreparedContentLocator(
-                        new HttpClientInputStream( get, is ), mimeType ) );
-
-                if ( get.getResponseContentLength() != -1 )
-                {
-                    // FILE
-                    httpItem.setLength( get.getResponseContentLength() );
-                }
+                        new HttpClientInputStream( get, is ), mimeType, get.getResponseContentLength() ) );
 
                 httpItem.setRemoteUrl( remoteURL.toString() );
 

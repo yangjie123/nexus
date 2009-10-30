@@ -22,28 +22,28 @@ import java.io.InputStream;
  * @author cstamas
  */
 public class PreparedContentLocator
-    implements ContentLocator
+    extends AbstractContentLocator
 {
     private final InputStream content;
 
-    private final String mimeType;
-
     public PreparedContentLocator( InputStream content, String mimeType )
     {
-        this.content = content;
+        super( mimeType );
 
-        this.mimeType = mimeType;
+        this.content = content;
+    }
+
+    public PreparedContentLocator( InputStream content, String mimeType, long length )
+    {
+        super( mimeType, length );
+
+        this.content = content;
     }
 
     public InputStream getContent()
         throws IOException
     {
         return content;
-    }
-
-    public String getMimeType()
-    {
-        return mimeType;
     }
 
     public boolean isReusable()

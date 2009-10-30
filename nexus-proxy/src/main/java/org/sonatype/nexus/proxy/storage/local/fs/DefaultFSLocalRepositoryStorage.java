@@ -249,7 +249,6 @@ public class DefaultFSLocalRepositoryStorage
                 getAttributesHandler().fetchAttributes( file );
                 file.setModified( target.lastModified() );
                 file.setCreated( target.lastModified() );
-                file.setLength( target.length() );
                 result = file;
             }
         }
@@ -351,8 +350,6 @@ public class DefaultFSLocalRepositoryStorage
                 }
 
                 target.setLastModified( item.getModified() );
-
-                ( (DefaultStorageFileItem) item ).setLength( target.length() );
 
                 InputStream mdis = new FileInputStream( target );
 

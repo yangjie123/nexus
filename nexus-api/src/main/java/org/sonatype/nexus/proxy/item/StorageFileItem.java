@@ -30,13 +30,6 @@ public interface StorageFileItem
     long getLength();
 
     /**
-     * Sets the length of file.
-     * 
-     * @param length
-     */
-    void setLength( long length );
-
-    /**
      * Gets the mime type.
      * 
      * @return the mime type

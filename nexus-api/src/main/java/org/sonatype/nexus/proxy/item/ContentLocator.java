@@ -23,6 +23,8 @@ import java.io.InputStream;
  */
 public interface ContentLocator
 {
+    static final long UNKNOWN_LENGTH = -1L;
+
     /**
      * Gets the content. It has to be closed by the caller explicitly.
      * 
@@ -31,6 +33,20 @@ public interface ContentLocator
      */
     InputStream getContent()
         throws IOException;
+
+    /**
+     * Gets the length of the content.
+     * 
+     * @return
+     */
+    long getLength();
+
+    /**
+     * Sets the content length, or set it to UNKNOWN_LENGTH if not known in advance (ie. is generated on the fly).
+     * 
+     * @param len
+     */
+    void setLength( long len );
 
     /**
      * Returns the MIME type of the content.

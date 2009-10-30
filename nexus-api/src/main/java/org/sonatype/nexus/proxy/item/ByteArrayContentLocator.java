@@ -18,28 +18,21 @@ import java.io.IOException;
 import java.io.InputStream;
 
 public class ByteArrayContentLocator
-    implements ContentLocator
+    extends AbstractContentLocator
 {
     private final byte[] content;
 
-    private final String mimeType;
-
     public ByteArrayContentLocator( byte[] content, String mimeType )
     {
-        this.content = content;
+        super( mimeType, content.length );
 
-        this.mimeType = mimeType;
+        this.content = content;
     }
 
     public InputStream getContent()
         throws IOException
     {
         return new ByteArrayInputStream( content );
-    }
-
-    public String getMimeType()
-    {
-        return mimeType;
     }
 
     public boolean isReusable()

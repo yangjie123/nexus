@@ -59,11 +59,25 @@ public interface StorageItem
     long getCreated();
 
     /**
+     * Sets the created timestamp of item.
+     * 
+     * @param created
+     */
+    void setCreated( long created );
+
+    /**
      * Gets the modification time.
      * 
      * @return the modified
      */
     long getModified();
+
+    /**
+     * Sets the modified timestamp of item.
+     * 
+     * @param modified
+     */
+    void setModified( long modified );
 
     /**
      * Gets the stored locally time.

@@ -1198,7 +1198,6 @@ public abstract class AbstractRepository
 
         DefaultStorageFileItem result =
             new DefaultStorageFileItem( this, request, true /* isReadable */, false /* isWritable */, content );
-        result.setLength( bytes.length );
 
         return result;
     }
