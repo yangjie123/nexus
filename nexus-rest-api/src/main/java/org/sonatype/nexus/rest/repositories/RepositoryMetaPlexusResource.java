@@ -13,6 +13,11 @@
  */
 package org.sonatype.nexus.rest.repositories;
 
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+
+import org.codehaus.enunciate.contract.jaxrs.ResourceMethodSignature;
 import org.codehaus.plexus.component.annotations.Component;
 import org.restlet.Context;
 import org.restlet.data.Request;
@@ -31,6 +36,7 @@ import org.sonatype.plexus.rest.resource.PathProtectionDescriptor;
 import org.sonatype.plexus.rest.resource.PlexusResource;
 
 @Component( role = PlexusResource.class, hint = "RepositoryMetaPlexusResource" )
+@Path( "/repositories/{" + AbstractRepositoryPlexusResource.REPOSITORY_ID_KEY + "}/meta" )
 public class RepositoryMetaPlexusResource
     extends AbstractRepositoryPlexusResource
 {
@@ -54,6 +60,8 @@ public class RepositoryMetaPlexusResource
     }
 
     @Override
+    @GET
+    @ResourceMethodSignature( pathParams = { @PathParam( REPOSITORY_ID_KEY ) }, output = RepositoryMetaResourceResponse.class )
     public Object get( Context context, Request request, Response response, Variant variant )
         throws ResourceException
     {
@@ -69,29 +77,20 @@ public class RepositoryMetaPlexusResource
             resource.setRepoType( getRestRepoType( repository ) );
 
             resource.setFormat( repository.getRepositoryContentClass().getId() );
-            
+
             for ( GroupRepository group : getRepositoryRegistry().getGroupsOfRepository( repository ) )
             {
                 resource.addGroup( group.getId() );
             }
 
             /*
-            NEXUS-2790 removing as calculation takes too long in certain circumstances
-            will eventually be reimplemented
-            
-            File localPath = org.sonatype.nexus.util.FileUtils.getFileFromUrl( repository.getLocalUrl() );
-            
-            try
-            {
-                resource.setSizeOnDisk( FileUtils.sizeOfDirectory( localPath ) );
-
-                resource.setFileCountInRepository( org.sonatype.nexus.util.FileUtils.filesInDirectory( localPath ) );
-            }
-            catch ( IllegalArgumentException e )
-            {
-                // the repo is maybe virgin, so the dir is not created until some request needs it
-            }
-            */
+             * NEXUS-2790 removing as calculation takes too long in certain circumstances will eventually be
+             * reimplemented File localPath = org.sonatype.nexus.util.FileUtils.getFileFromUrl( repository.getLocalUrl()
+             * ); try { resource.setSizeOnDisk( FileUtils.sizeOfDirectory( localPath ) );
+             * resource.setFileCountInRepository( org.sonatype.nexus.util.FileUtils.filesInDirectory( localPath ) ); }
+             * catch ( IllegalArgumentException e ) { // the repo is maybe virgin, so the dir is not created until some
+             * request needs it }
+             */
 
             // mustang is able to get this with File.getUsableFreeSpace();
             resource.setFreeSpaceOnDisk( -1 );

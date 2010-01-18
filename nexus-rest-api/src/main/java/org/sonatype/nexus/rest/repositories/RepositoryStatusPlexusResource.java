@@ -15,6 +15,12 @@ package org.sonatype.nexus.rest.repositories;
 
 import java.io.IOException;
 
+import javax.ws.rs.GET;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+
+import org.codehaus.enunciate.contract.jaxrs.ResourceMethodSignature;
 import org.codehaus.plexus.component.annotations.Component;
 import org.restlet.Context;
 import org.restlet.data.Request;
@@ -37,6 +43,7 @@ import org.sonatype.plexus.rest.resource.PathProtectionDescriptor;
 import org.sonatype.plexus.rest.resource.PlexusResource;
 
 @Component( role = PlexusResource.class, hint = "RepositoryStatusPlexusResource" )
+@Path( "/repositories/{" + AbstractRepositoryPlexusResource.REPOSITORY_ID_KEY + "}/status" )
 public class RepositoryStatusPlexusResource
     extends AbstractRepositoryPlexusResource
 {
@@ -65,6 +72,8 @@ public class RepositoryStatusPlexusResource
     }
 
     @Override
+    @GET
+    @ResourceMethodSignature( pathParams = { @PathParam( REPOSITORY_ID_KEY ) }, output = RepositoryStatusResourceResponse.class )
     public Object get( Context context, Request request, Response response, Variant variant )
         throws ResourceException
     {
@@ -117,6 +126,8 @@ public class RepositoryStatusPlexusResource
     }
 
     @Override
+    @PUT
+    @ResourceMethodSignature( pathParams = { @PathParam( REPOSITORY_ID_KEY ) }, input = RepositoryStatusResourceResponse.class, output = RepositoryStatusResourceResponse.class )
     public Object put( Context context, Request request, Response response, Object payload )
         throws ResourceException
     {

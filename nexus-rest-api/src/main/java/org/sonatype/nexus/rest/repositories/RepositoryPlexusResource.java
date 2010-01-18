@@ -15,6 +15,13 @@ package org.sonatype.nexus.rest.repositories;
 
 import java.io.IOException;
 
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+
+import org.codehaus.enunciate.contract.jaxrs.ResourceMethodSignature;
 import org.codehaus.plexus.component.annotations.Component;
 import org.restlet.Context;
 import org.restlet.data.Request;
@@ -52,10 +59,11 @@ import org.sonatype.plexus.rest.resource.error.ErrorResponse;
 
 /**
  * Resource handler for Repository resource.
- *
+ * 
  * @author cstamas
  */
 @Component( role = PlexusResource.class, hint = "RepositoryPlexusResource" )
+@Path( "/repositories/{" + AbstractRepositoryPlexusResource.REPOSITORY_ID_KEY + "}" )
 public class RepositoryPlexusResource
     extends AbstractRepositoryPlexusResource
 {
@@ -84,6 +92,8 @@ public class RepositoryPlexusResource
     }
 
     @Override
+    @GET
+    @ResourceMethodSignature( pathParams = { @PathParam( REPOSITORY_ID_KEY ) }, output = RepositoryResourceResponse.class )
     public Object get( Context context, Request request, Response response, Variant variant )
         throws ResourceException
     {
@@ -91,6 +101,8 @@ public class RepositoryPlexusResource
     }
 
     @Override
+    @PUT
+    @ResourceMethodSignature( pathParams = { @PathParam( REPOSITORY_ID_KEY ) }, input = RepositoryResourceResponse.class, output = RepositoryResourceResponse.class )
     public Object put( Context context, Request request, Response response, Object payload )
         throws ResourceException
     {
@@ -149,7 +161,9 @@ public class RepositoryPlexusResource
                         repository.setExposed( resource.isExposed() );
 
                         // set null to read only
-                        RepositoryWritePolicy writePolicy = (model.getWritePolicy() != null) ? RepositoryWritePolicy.valueOf( model.getWritePolicy() ) : RepositoryWritePolicy.READ_ONLY;
+                        RepositoryWritePolicy writePolicy =
+                            ( model.getWritePolicy() != null ) ? RepositoryWritePolicy.valueOf( model.getWritePolicy() )
+                                            : RepositoryWritePolicy.READ_ONLY;
 
                         repository.setWritePolicy( writePolicy );
 
@@ -159,32 +173,45 @@ public class RepositoryPlexusResource
                         repository.setSearchable( model.isIndexable() );
 
                         repository.setNotFoundCacheTimeToLive( model.getNotFoundCacheTTL() );
-                        
+
                         if ( repository.getRepositoryKind().isFacetAvailable( ProxyRepository.class ) )
                         {
                             ProxyRepository proxyRepo = repository.adaptToFacet( ProxyRepository.class );
-                            
+
                             proxyRepo.setRemoteUrl( model.getRemoteStorage().getRemoteStorageUrl() );
                             String oldPasswordForRemoteStorage = null;
-                            if( proxyRepo.getRemoteAuthenticationSettings() != null &&
-                                UsernamePasswordRemoteAuthenticationSettings.class.isInstance( proxyRepo.getRemoteAuthenticationSettings() ))
+                            if ( proxyRepo.getRemoteAuthenticationSettings() != null
+                                && UsernamePasswordRemoteAuthenticationSettings.class.isInstance( proxyRepo.getRemoteAuthenticationSettings() ) )
                             {
-                                oldPasswordForRemoteStorage = ((UsernamePasswordRemoteAuthenticationSettings) proxyRepo.getRemoteAuthenticationSettings() ).getPassword();
+                                oldPasswordForRemoteStorage =
+                                    ( (UsernamePasswordRemoteAuthenticationSettings) proxyRepo.getRemoteAuthenticationSettings() ).getPassword();
                             }
 
                             String oldPasswordForProxy = null;
-                            if( proxyRepo.getRemoteProxySettings() != null && proxyRepo.getRemoteProxySettings().isEnabled() &&
-                                proxyRepo.getRemoteProxySettings().getProxyAuthentication() != null &&
-                                UsernamePasswordRemoteAuthenticationSettings.class.isInstance( proxyRepo.getRemoteAuthenticationSettings() ))
+                            if ( proxyRepo.getRemoteProxySettings() != null
+                                && proxyRepo.getRemoteProxySettings().isEnabled()
+                                && proxyRepo.getRemoteProxySettings().getProxyAuthentication() != null
+                                && UsernamePasswordRemoteAuthenticationSettings.class.isInstance( proxyRepo.getRemoteAuthenticationSettings() ) )
                             {
-                                oldPasswordForProxy = ((UsernamePasswordRemoteAuthenticationSettings) proxyRepo.getRemoteProxySettings().getProxyAuthentication() ).getPassword();
+                                oldPasswordForProxy =
+                                    ( (UsernamePasswordRemoteAuthenticationSettings) proxyRepo.getRemoteProxySettings().getProxyAuthentication() ).getPassword();
                             }
 
-                            RemoteAuthenticationSettings remoteAuth = getAuthenticationInfoConverter().convertAndValidateFromModel( this.convertAuthentication(  model.getRemoteStorage().getAuthentication(), oldPasswordForRemoteStorage ));
-                            RemoteConnectionSettings remoteConnSettings = getGlobalRemoteConnectionSettings().convertAndValidateFromModel( this.convertRemoteConnectionSettings( model.getRemoteStorage().getConnectionSettings() ));
-                            RemoteProxySettings httpProxySettings = getGlobalHttpProxySettings().convertAndValidateFromModel( this.convertHttpProxySettings( model.getRemoteStorage().getHttpProxySettings(), oldPasswordForProxy ) );
+                            RemoteAuthenticationSettings remoteAuth =
+                                getAuthenticationInfoConverter().convertAndValidateFromModel(
+                                                                                              this.convertAuthentication(
+                                                                                                                          model.getRemoteStorage().getAuthentication(),
+                                                                                                                          oldPasswordForRemoteStorage ) );
+                            RemoteConnectionSettings remoteConnSettings =
+                                getGlobalRemoteConnectionSettings().convertAndValidateFromModel(
+                                                                                                 this.convertRemoteConnectionSettings( model.getRemoteStorage().getConnectionSettings() ) );
+                            RemoteProxySettings httpProxySettings =
+                                getGlobalHttpProxySettings().convertAndValidateFromModel(
+                                                                                          this.convertHttpProxySettings(
+                                                                                                                         model.getRemoteStorage().getHttpProxySettings(),
+                                                                                                                         oldPasswordForProxy ) );
 
-                            if( remoteAuth != null )
+                            if ( remoteAuth != null )
                             {
                                 proxyRepo.setRemoteAuthenticationSettings( remoteAuth );
                             }
@@ -193,7 +220,7 @@ public class RepositoryPlexusResource
                                 proxyRepo.getRemoteStorageContext().removeRemoteAuthenticationSettings();
                             }
 
-                            if( remoteConnSettings != null )
+                            if ( remoteConnSettings != null )
                             {
                                 proxyRepo.setRemoteConnectionSettings( remoteConnSettings );
                             }
@@ -202,7 +229,7 @@ public class RepositoryPlexusResource
                                 proxyRepo.getRemoteStorageContext().removeRemoteConnectionSettings();
                             }
 
-                            if( httpProxySettings != null)
+                            if ( httpProxySettings != null )
                             {
                                 proxyRepo.setRemoteProxySettings( httpProxySettings );
                             }
@@ -228,15 +255,16 @@ public class RepositoryPlexusResource
 
                                 pRepository.setDownloadRemoteIndexes( model.isDownloadRemoteIndexes() );
 
-                                pRepository.setChecksumPolicy( EnumUtil.valueOf( model.getChecksumPolicy(), ChecksumPolicy.class ) );
+                                pRepository.setChecksumPolicy( EnumUtil.valueOf( model.getChecksumPolicy(),
+                                                                                 ChecksumPolicy.class ) );
 
                                 pRepository.setDownloadRemoteIndexes( model.isDownloadRemoteIndexes() );
 
-                                RepositoryProxyResource proxyModel = ( RepositoryProxyResource ) model;
+                                RepositoryProxyResource proxyModel = (RepositoryProxyResource) model;
 
                                 pRepository.setArtifactMaxAge( proxyModel.getArtifactMaxAge() );
 
-                                pRepository.setMetadataMaxAge( proxyModel.getMetadataMaxAge() );   
+                                pRepository.setMetadataMaxAge( proxyModel.getMetadataMaxAge() );
                             }
                         }
 
@@ -281,6 +309,8 @@ public class RepositoryPlexusResource
     }
 
     @Override
+    @DELETE
+    @ResourceMethodSignature( pathParams = { @PathParam( REPOSITORY_ID_KEY ) } )
     public void delete( Context context, Request request, Response response )
         throws ResourceException
     {

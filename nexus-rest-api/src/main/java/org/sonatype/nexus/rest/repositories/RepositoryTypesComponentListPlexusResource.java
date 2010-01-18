@@ -13,6 +13,11 @@
  */
 package org.sonatype.nexus.rest.repositories;
 
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.QueryParam;
+
+import org.codehaus.enunciate.contract.jaxrs.ResourceMethodSignature;
 import org.codehaus.plexus.component.annotations.Component;
 import org.codehaus.plexus.component.annotations.Requirement;
 import org.restlet.Context;
@@ -38,12 +43,13 @@ import org.sonatype.plexus.rest.resource.PathProtectionDescriptor;
 import org.sonatype.plexus.rest.resource.PlexusResource;
 
 @Component( role = PlexusResource.class, hint = "RepositoryTypesComponentListPlexusResource" )
+@Path( "/components/repo_types" )
 public class RepositoryTypesComponentListPlexusResource
     extends AbstractNexusPlexusResource
 {
     @Requirement
     private RepositoryTypeRegistry repoTypeRegistry;
-    
+
     @Override
     public String getResourceUri()
     {
@@ -55,7 +61,7 @@ public class RepositoryTypesComponentListPlexusResource
     {
         return new PathProtectionDescriptor( getResourceUri(), "authcBasic,perms[nexus:componentsrepotypes]" );
     }
-    
+
     @Override
     public Object getPayloadInstance()
     {
@@ -63,6 +69,8 @@ public class RepositoryTypesComponentListPlexusResource
     }
 
     @Override
+    @GET
+    @ResourceMethodSignature( queryParams = @QueryParam( "repoType" ), output = NexusRepositoryTypeListResourceResponse.class )
     public Object get( Context context, Request request, Response response, Variant variant )
         throws ResourceException
     {
@@ -70,9 +78,9 @@ public class RepositoryTypesComponentListPlexusResource
 
         // such horrible terminology for this class, its actually repo providers that are being returned
         String repoType = form.getFirstValue( "repoType" );
-        
+
         TemplateSet templateSet = getNexus().getRepositoryTemplates();
-        
+
         if ( "hosted".equals( repoType ) )
         {
             templateSet = templateSet.getTemplates( HostedRepository.class );
@@ -89,31 +97,31 @@ public class RepositoryTypesComponentListPlexusResource
         {
             templateSet = templateSet.getTemplates( GroupRepository.class );
         }
-        
+
         NexusRepositoryTypeListResourceResponse result = new NexusRepositoryTypeListResourceResponse();
-        
+
         if ( templateSet.getTemplatesList().isEmpty() )
         {
             throw new ResourceException( Status.CLIENT_ERROR_NOT_FOUND );
         }
-        
+
         for ( Template template : templateSet.getTemplatesList() )
         {
             NexusRepositoryTypeListResource resource = new NexusRepositoryTypeListResource();
-            
-            String providerRole = ( ( RepositoryTemplate ) template ).getRepositoryProviderRole();
-            String providerHint = ( ( RepositoryTemplate ) template ).getRepositoryProviderHint();
-            
+
+            String providerRole = ( (RepositoryTemplate) template ).getRepositoryProviderRole();
+            String providerHint = ( (RepositoryTemplate) template ).getRepositoryProviderHint();
+
             resource.setProvider( providerHint );
 
             resource.setProviderRole( providerRole );
 
-            resource.setFormat( ( ( AbstractRepositoryTemplate ) template ).getContentClass().getId() );
-            
+            resource.setFormat( ( (AbstractRepositoryTemplate) template ).getContentClass().getId() );
+
             resource.setDescription( repoTypeRegistry.getRepositoryDescription( providerRole, providerHint ) );
 
             // add it to the collection
-            result.addData( resource );            
+            result.addData( resource );
         }
 
         return result;

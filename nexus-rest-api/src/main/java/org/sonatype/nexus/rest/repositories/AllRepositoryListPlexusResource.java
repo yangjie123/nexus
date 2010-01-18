@@ -13,12 +13,17 @@
  */
 package org.sonatype.nexus.rest.repositories;
 
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+
+import org.codehaus.enunciate.contract.jaxrs.ResourceMethodSignature;
 import org.codehaus.plexus.component.annotations.Component;
 import org.restlet.Context;
 import org.restlet.data.Request;
 import org.restlet.data.Response;
 import org.restlet.resource.ResourceException;
 import org.restlet.resource.Variant;
+import org.sonatype.nexus.rest.model.RepositoryListResourceResponse;
 import org.sonatype.plexus.rest.resource.PathProtectionDescriptor;
 import org.sonatype.plexus.rest.resource.PlexusResource;
 
@@ -28,6 +33,7 @@ import org.sonatype.plexus.rest.resource.PlexusResource;
  * @author cstamas
  */
 @Component( role = PlexusResource.class, hint = "AllRepositoryListPlexusResource" )
+@Path( "/all_repositories" )
 public class AllRepositoryListPlexusResource
     extends AbstractRepositoryPlexusResource
 {
@@ -55,6 +61,8 @@ public class AllRepositoryListPlexusResource
     }
 
     @Override
+    @GET
+    @ResourceMethodSignature( output = RepositoryListResourceResponse.class )
     public Object get( Context context, Request request, Response response, Variant variant )
         throws ResourceException
     {

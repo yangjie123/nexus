@@ -7,11 +7,14 @@
 
 package org.sonatype.nexus.rest.model;
 
+import javax.xml.bind.annotation.XmlRootElement;
+
 /**
  * Class RepositoryResourceResponse.
  * 
  * @version $Revision$ $Date$
  */
+@XmlRootElement(name="repository")
 public class RepositoryResourceResponse
     extends NexusResponse
     implements java.io.Serializable

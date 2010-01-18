@@ -7,11 +7,14 @@
 
 package org.sonatype.nexus.rest.model;
 
+import javax.xml.bind.annotation.XmlType;
+
 /**
  * Class RepositoryListResource.
  * 
  * @version $Revision$ $Date$
  */
+@XmlType(name="repositories-item")
 public class RepositoryListResource
     implements java.io.Serializable
 {
