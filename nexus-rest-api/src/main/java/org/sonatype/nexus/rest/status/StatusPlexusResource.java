@@ -18,6 +18,7 @@ import java.io.StringWriter;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
 
 import org.codehaus.enunciate.contract.jaxrs.ResourceMethodSignature;
 import org.codehaus.plexus.component.annotations.Component;
@@ -39,6 +40,7 @@ import org.sonatype.security.rest.model.AuthenticationClientPermissions;
 
 @Component( role = ManagedPlexusResource.class, hint = "StatusPlexusResource" )
 @Path( "/status" )
+@Produces( { "application/xml", "application/json" } )
 public class StatusPlexusResource
     extends AbstractUIPermissionCalculatingPlexusResource
     implements ManagedPlexusResource
