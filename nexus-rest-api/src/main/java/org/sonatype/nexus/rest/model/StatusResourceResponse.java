@@ -14,7 +14,7 @@ import javax.xml.bind.annotation.XmlRootElement;
  * 
  * @version $Revision$ $Date$
  */
-@XmlRootElement(name="repository-status")
+@XmlRootElement(name="status")
 public class StatusResourceResponse
     extends NexusResponse
     implements java.io.Serializable

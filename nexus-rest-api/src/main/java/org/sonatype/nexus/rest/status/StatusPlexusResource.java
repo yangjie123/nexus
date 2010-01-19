@@ -18,7 +18,6 @@ import java.io.StringWriter;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
 
 import org.codehaus.enunciate.contract.jaxrs.ResourceMethodSignature;
 import org.codehaus.plexus.component.annotations.Component;
@@ -30,7 +29,6 @@ import org.restlet.resource.ResourceException;
 import org.restlet.resource.Variant;
 import org.sonatype.nexus.Nexus;
 import org.sonatype.nexus.SystemStatus;
-import org.sonatype.nexus.plugins.RestResource;
 import org.sonatype.nexus.rest.model.NexusAuthenticationClientPermissions;
 import org.sonatype.nexus.rest.model.StatusResource;
 import org.sonatype.nexus.rest.model.StatusResourceResponse;

@@ -6,25 +6,27 @@
   <api-classes>
     <include pattern="org.sonatype.nexus.remote.*" />
   </api-classes>
-  -->
 
   <namespaces>
     <namespace id="api" uri="http://nexus.sonatype.org/api/1.0.0" />
     <namespace id="domain" uri="http://nexus.sonatype.org/domain/1.0.0" />
   </namespaces>
+  -->
 
   <modules>
 
+    <jersey disabled="true" />
+  <!-- Off for now -->
+  <!-- 
     <jaxws disabled="true" />
     <jaxws-client disabled="true" />
     <jaxws-support disabled="true" />
     <jaxws-ri disabled="true" />
     <gwt disabled="true" />
     <jaxws-client disabled="true" />
+  -->
 
-    <jersey disabled="true" />
-
-    <docs disabled="false" title="Sonatype Nexus Remote API">
+    <docs disabled="false" title="Sonatype Nexus Remote API" includeExampleXml="true" includeExampleJson="true">
       <war docsDir="apidocs" />
     </docs>
 
