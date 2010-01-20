@@ -13,9 +13,11 @@
  */
 package org.sonatype.nexus.rest.repositories;
 
+import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
 
 import org.codehaus.enunciate.contract.jaxrs.ResourceMethodSignature;
 import org.codehaus.plexus.component.annotations.Component;
@@ -37,6 +39,8 @@ import org.sonatype.plexus.rest.resource.PlexusResource;
 
 @Component( role = PlexusResource.class, hint = "RepositoryMetaPlexusResource" )
 @Path( "/repositories/{" + AbstractRepositoryPlexusResource.REPOSITORY_ID_KEY + "}/meta" )
+@Produces( { "application/xml", "application/json" } )
+@Consumes( { "application/xml", "application/json" } )
 public class RepositoryMetaPlexusResource
     extends AbstractRepositoryPlexusResource
 {
@@ -59,6 +63,9 @@ public class RepositoryMetaPlexusResource
         return new PathProtectionDescriptor( "/repositories/*/meta", "authcBasic,perms[nexus:repometa]" );
     }
 
+    /**
+     * Returns the "meta" data about a given repository.
+     */
     @Override
     @GET
     @ResourceMethodSignature( pathParams = { @PathParam( REPOSITORY_ID_KEY ) }, output = RepositoryMetaResourceResponse.class )

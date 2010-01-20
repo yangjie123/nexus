@@ -13,8 +13,10 @@
  */
 package org.sonatype.nexus.rest.repositories;
 
+import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
 
 import org.codehaus.enunciate.contract.jaxrs.ResourceMethodSignature;
 import org.codehaus.plexus.component.annotations.Component;
@@ -34,6 +36,8 @@ import org.sonatype.plexus.rest.resource.PlexusResource;
  */
 @Component( role = PlexusResource.class, hint = "AllRepositoryListPlexusResource" )
 @Path( "/all_repositories" )
+@Produces( { "application/xml", "application/json" } )
+@Consumes( { "application/xml", "application/json" } )
 public class AllRepositoryListPlexusResource
     extends AbstractRepositoryPlexusResource
 {

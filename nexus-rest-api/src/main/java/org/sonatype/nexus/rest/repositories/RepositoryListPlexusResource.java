@@ -15,9 +15,11 @@ package org.sonatype.nexus.rest.repositories;
 
 import java.io.IOException;
 
+import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
 
 import org.codehaus.enunciate.contract.jaxrs.ResourceMethodSignature;
 import org.codehaus.plexus.component.annotations.Component;
@@ -63,6 +65,8 @@ import org.sonatype.plexus.rest.resource.PlexusResourceException;
  */
 @Component( role = PlexusResource.class, hint = "RepositoryListPlexusResource" )
 @Path( "/repositories" )
+@Produces( { "application/xml", "application/json" } )
+@Consumes( { "application/xml", "application/json" } )
 public class RepositoryListPlexusResource
     extends AbstractRepositoryPlexusResource
 {

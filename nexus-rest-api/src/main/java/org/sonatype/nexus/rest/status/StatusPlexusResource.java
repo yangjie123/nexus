@@ -68,7 +68,7 @@ public class StatusPlexusResource
     }
 
     /**
-     * Returns the "status" of Nexus, with some basic information like version, edition, operation mode.
+     * Returns the status of Nexus, with some basic information like version, edition, operation mode.
      */
     @Override
     @GET

@@ -175,6 +175,10 @@
             <goals>
               <goal>docs</goal>
             </goals>
+            <configuration>
+              <!-- the directory where to put the docs -->
+              <docsDir>${project.build.directory}/docs</docsDir>
+            </configuration>
           </execution>
         </executions>
         <dependencies>

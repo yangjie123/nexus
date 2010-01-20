@@ -24,8 +24,13 @@ import java.util.List;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.PUT;
+import javax.ws.rs.PathParam;
 
 import org.apache.commons.fileupload.FileItem;
+import org.codehaus.enunciate.contract.jaxrs.ResourceMethodSignature;
 import org.codehaus.plexus.util.StringUtils;
 import org.restlet.Context;
 import org.restlet.data.ChallengeRequest;
@@ -63,6 +68,7 @@ import org.sonatype.nexus.rest.model.ContentListDescribeResourceResponse;
 import org.sonatype.nexus.rest.model.ContentListDescribeResponseResource;
 import org.sonatype.nexus.rest.model.ContentListResource;
 import org.sonatype.nexus.rest.model.ContentListResourceResponse;
+import org.sonatype.nexus.rest.repositories.AbstractRepositoryPlexusResource;
 import org.sonatype.nexus.security.filter.authc.NexusHttpAuthenticationFilter;
 import org.sonatype.plexus.rest.representation.VelocityRepresentation;
 
@@ -118,7 +124,14 @@ public abstract class AbstractResourceStoreContentPlexusResource
         return request.getResourceRef().getQueryAsForm().getFirst( IS_DESCRIBE_PARAMETER ) != null;
     }
 
+    /**
+     * Retrieves a file from given repository, from the path that is calculated from the rest of the request path,
+     * calculated from the mount point of this resource. Generates listing in given content type if item is collection,
+     * otherwise the file content is streamed.
+     */
     @Override
+    @GET
+    @ResourceMethodSignature( pathParams = { @PathParam( AbstractRepositoryPlexusResource.REPOSITORY_ID_KEY ) }, output=Object.class )
     public Object get( Context context, Request request, Response response, Variant variant )
         throws ResourceException
     {
@@ -154,7 +167,13 @@ public abstract class AbstractResourceStoreContentPlexusResource
         }
     }
 
+    /**
+     * Uploads a file to given repository, to the path that is calculated from the rest of the request path, calculated
+     * from the mount point of this resource.
+     */
     @Override
+    @PUT
+    @ResourceMethodSignature( pathParams = { @PathParam( AbstractRepositoryPlexusResource.REPOSITORY_ID_KEY ) } )
     public Object upload( Context context, Request request, Response response, List<FileItem> files )
         throws ResourceException
     {
@@ -174,7 +193,13 @@ public abstract class AbstractResourceStoreContentPlexusResource
         return null;
     }
 
+    /**
+     * Deletes a file from given repository, from the path that is calculated from the rest of the request path,
+     * calculated from the mount point of this resource.
+     */
     @Override
+    @DELETE
+    @ResourceMethodSignature( pathParams = { @PathParam( AbstractRepositoryPlexusResource.REPOSITORY_ID_KEY ) } )
     public void delete( Context context, Request request, Response response )
         throws ResourceException
     {
@@ -409,10 +434,8 @@ public abstract class AbstractResourceStoreContentPlexusResource
 
                     resource.setLastModified( new Date( child.getModified() ) );
 
-                    resource
-                        .setSizeOnDisk( StorageFileItem.class.isAssignableFrom( child.getClass() ) ? ( (StorageFileItem) child )
-                            .getLength()
-                                        : -1 );
+                    resource.setSizeOnDisk( StorageFileItem.class.isAssignableFrom( child.getClass() ) ? ( (StorageFileItem) child ).getLength()
+                                    : -1 );
 
                     response.addData( resource );
 
@@ -454,8 +477,8 @@ public abstract class AbstractResourceStoreContentPlexusResource
 
             // Load up the template, and pass in the data
             VelocityRepresentation representation =
-                new VelocityRepresentation( context, "/templates/repositoryContentHtml.vm", dataModel, variant
-                    .getMediaType() );
+                new VelocityRepresentation( context, "/templates/repositoryContentHtml.vm", dataModel,
+                                            variant.getMediaType() );
 
             return representation;
         }
@@ -464,7 +487,7 @@ public abstract class AbstractResourceStoreContentPlexusResource
     }
 
     protected Object renderDescribeItem( Context context, Request req, Response res, Variant variant,
-        ResourceStoreRequest request, StorageItem item )
+                                         ResourceStoreRequest request, StorageItem item )
         throws IOException, AccessDeniedException, NoSuchResourceStoreException, IllegalOperationException,
         ItemNotFoundException, StorageException, ResourceException
     {
@@ -495,7 +518,7 @@ public abstract class AbstractResourceStoreContentPlexusResource
     }
 
     protected ContentListDescribeRequestResource describeRequest( Context context, Request req, Response res,
-        Variant variant, ResourceStoreRequest request )
+                                                                  Variant variant, ResourceStoreRequest request )
     {
         ContentListDescribeRequestResource result = new ContentListDescribeRequestResource();
 
@@ -512,7 +535,8 @@ public abstract class AbstractResourceStoreContentPlexusResource
     }
 
     protected ContentListDescribeResponseResource describeResponse( Context context, Request req, Response res,
-        Variant variant, ResourceStoreRequest request, StorageItem item )
+                                                                    Variant variant, ResourceStoreRequest request,
+                                                                    StorageItem item )
     {
         ContentListDescribeResponseResource result = new ContentListDescribeResponseResource();
 
@@ -562,8 +586,7 @@ public abstract class AbstractResourceStoreContentPlexusResource
 
             result.setOriginatingRepositoryName( item.getRepositoryItemUid().getRepository().getName() );
 
-            result.setOriginatingRepositoryMainFacet( item.getRepositoryItemUid().getRepository().getRepositoryKind()
-                .getMainFacet().getName() );
+            result.setOriginatingRepositoryMainFacet( item.getRepositoryItemUid().getRepository().getRepositoryKind().getMainFacet().getName() );
         }
         else
         {
@@ -657,7 +680,8 @@ public abstract class AbstractResourceStoreContentPlexusResource
         if ( getLogger().isDebugEnabled() )
         {
             getLogger().debug(
-                "Got exception during processing " + req.getMethod() + " " + req.getResourceRef().toString(), t );
+                               "Got exception during processing " + req.getMethod() + " "
+                                   + req.getResourceRef().toString(), t );
         }
 
         if ( t instanceof ResourceException )

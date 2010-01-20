@@ -13,7 +13,9 @@
  */
 package org.sonatype.nexus.rest.repositories;
 
+import javax.ws.rs.Consumes;
 import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
 
 import org.codehaus.plexus.component.annotations.Component;
 import org.restlet.data.Request;
@@ -31,7 +33,9 @@ import org.sonatype.plexus.rest.resource.PlexusResource;
  * @author cstamas
  */
 @Component( role = PlexusResource.class, hint = "RepositoryContentPlexusResource" )
-@Path("/repositories")
+@Path( "/repositories/{" + AbstractRepositoryPlexusResource.REPOSITORY_ID_KEY + "}/content" )
+@Produces( { "application/xml", "application/json", "*/*" } )
+@Consumes( { "application/xml", "application/json" } )
 public class RepositoryContentPlexusResource
     extends AbstractResourceStoreContentPlexusResource
 {
@@ -67,21 +71,21 @@ public class RepositoryContentPlexusResource
 
     @Override
     protected ResourceStore getResourceStore( Request request )
-        throws NoSuchRepositoryException,
-            ResourceException
+        throws NoSuchRepositoryException, ResourceException
     {
         return getUnprotectedRepositoryRegistry().getRepository(
-            request.getAttributes().get( AbstractRepositoryPlexusResource.REPOSITORY_ID_KEY ).toString() );
+                                                                 request.getAttributes().get(
+                                                                                              AbstractRepositoryPlexusResource.REPOSITORY_ID_KEY ).toString() );
     }
-    
+
     @Override
     protected ResourceStoreRequest getResourceStoreRequest( Request request, String resourceStorePath )
     {
         ResourceStoreRequest resourceStoreRequest = super.getResourceStoreRequest( request, resourceStorePath );
-        
+
         // welcome files should not be used with this resource.
         resourceStoreRequest.getRequestContext().put( USE_WELCOME_FILES, Boolean.FALSE );
-        
+
         return resourceStoreRequest;
     }
 

@@ -15,11 +15,13 @@ package org.sonatype.nexus.rest.repositories;
 
 import java.io.IOException;
 
+import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
 
 import org.codehaus.enunciate.contract.jaxrs.ResourceMethodSignature;
 import org.codehaus.plexus.component.annotations.Component;
@@ -64,6 +66,8 @@ import org.sonatype.plexus.rest.resource.error.ErrorResponse;
  */
 @Component( role = PlexusResource.class, hint = "RepositoryPlexusResource" )
 @Path( "/repositories/{" + AbstractRepositoryPlexusResource.REPOSITORY_ID_KEY + "}" )
+@Produces( { "application/xml", "application/json" } )
+@Consumes( { "application/xml", "application/json" } )
 public class RepositoryPlexusResource
     extends AbstractRepositoryPlexusResource
 {
@@ -91,6 +95,9 @@ public class RepositoryPlexusResource
         return new PathProtectionDescriptor( "/repositories/*", "authcBasic,perms[nexus:repositories]" );
     }
 
+    /**
+     * Returns the given repository.
+     */
     @Override
     @GET
     @ResourceMethodSignature( pathParams = { @PathParam( REPOSITORY_ID_KEY ) }, output = RepositoryResourceResponse.class )
@@ -100,6 +107,9 @@ public class RepositoryPlexusResource
         return this.getRepositoryResourceResponse( request, getRepositoryId( request ) );
     }
 
+    /**
+     * Updates the given repository.
+     */
     @Override
     @PUT
     @ResourceMethodSignature( pathParams = { @PathParam( REPOSITORY_ID_KEY ) }, input = RepositoryResourceResponse.class, output = RepositoryResourceResponse.class )
@@ -308,6 +318,9 @@ public class RepositoryPlexusResource
         return this.getRepositoryResourceResponse( request, getRepositoryId( request ) );
     }
 
+    /**
+     * Removes given repository.
+     */
     @Override
     @DELETE
     @ResourceMethodSignature( pathParams = { @PathParam( REPOSITORY_ID_KEY ) } )
