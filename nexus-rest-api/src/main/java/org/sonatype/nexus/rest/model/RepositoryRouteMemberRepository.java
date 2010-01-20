@@ -7,11 +7,14 @@
 
 package org.sonatype.nexus.rest.model;
 
+import javax.xml.bind.annotation.XmlType;
+
 /**
  * Class RepositoryRouteMemberRepository.
  * 
  * @version $Revision$ $Date$
  */
+@XmlType( name = "repo-routes-member" )
 public class RepositoryRouteMemberRepository
     implements java.io.Serializable
 {

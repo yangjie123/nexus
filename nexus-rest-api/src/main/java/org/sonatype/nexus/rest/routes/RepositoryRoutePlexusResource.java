@@ -18,6 +18,15 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.regex.PatternSyntaxException;
 
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+
+import org.codehaus.enunciate.contract.jaxrs.ResourceMethodSignature;
 import org.codehaus.plexus.component.annotations.Component;
 import org.restlet.Context;
 import org.restlet.data.Request;
@@ -45,6 +54,9 @@ import org.sonatype.plexus.rest.resource.error.ErrorResponse;
  * @author tstevens
  */
 @Component( role = PlexusResource.class, hint = "RepositoryRoutePlexusResource" )
+@Path( "/repo_routes/{" + AbstractRepositoryRoutePlexusResource.ROUTE_ID_KEY + "}" )
+@Produces( { "application/xml", "application/json" } )
+@Consumes( { "application/xml", "application/json" } )
 public class RepositoryRoutePlexusResource
     extends AbstractRepositoryRoutePlexusResource
 {
@@ -78,6 +90,8 @@ public class RepositoryRoutePlexusResource
     }
 
     @Override
+    @GET
+    @ResourceMethodSignature( pathParams = { @PathParam( AbstractRepositoryRoutePlexusResource.ROUTE_ID_KEY ) }, output = RepositoryRouteResourceResponse.class )
     public Object get( Context context, Request request, Response response, Variant variant )
         throws ResourceException
     {
@@ -138,8 +152,9 @@ public class RepositoryRoutePlexusResource
         return result;
     }
 
-    @SuppressWarnings( "unchecked" )
     @Override
+    @PUT
+    @ResourceMethodSignature( pathParams = { @PathParam( AbstractRepositoryRoutePlexusResource.ROUTE_ID_KEY ) }, input = RepositoryRouteResourceResponse.class, output = RepositoryRouteResourceResponse.class )
     public Object put( Context context, Request request, Response response, Object payload )
         throws ResourceException
     {
@@ -150,8 +165,7 @@ public class RepositoryRoutePlexusResource
         {
             RepositoryRouteResource resource = routeRequest.getData();
 
-            if ( ( !RepositoryRouteResource.BLOCKING_RULE_TYPE.equals( resource.getRuleType() ) && ( resource
-                .getRepositories() == null || resource.getRepositories().size() == 0 ) )
+            if ( ( !RepositoryRouteResource.BLOCKING_RULE_TYPE.equals( resource.getRuleType() ) && ( resource.getRepositories() == null || resource.getRepositories().size() == 0 ) )
                 || resource.getId() == null || !resource.getId().equals( getRouteId( request ) ) )
             {
                 throw new PlexusResourceException(
@@ -183,8 +197,8 @@ public class RepositoryRoutePlexusResource
 
                 RepositoryPathMapping newRoute =
                     new RepositoryPathMapping( route.getId(), resource2configType( resource.getRuleType() ),
-                                               resource.getGroupId(), Arrays.asList( new String[] { resource
-                                                   .getPattern() } ), mappedReposes );
+                                               resource.getGroupId(),
+                                               Arrays.asList( new String[] { resource.getPattern() } ), mappedReposes );
 
                 getRepositoryMapper().addMapping( newRoute );
 
@@ -208,24 +222,17 @@ public class RepositoryRoutePlexusResource
             {
                 // TODO: fix because this happens before we validate, we need to fix the validation.
                 ErrorResponse errorResponse = getNexusErrorResponse( "*", e.getMessage() );
-                throw new PlexusResourceException( Status.CLIENT_ERROR_BAD_REQUEST, "Configuration error.", errorResponse );
+                throw new PlexusResourceException( Status.CLIENT_ERROR_BAD_REQUEST, "Configuration error.",
+                                                   errorResponse );
             }
-/*            catch ( NoSuchRepositoryAccessException e )
-            {
-                getLogger().debug( "Access Denied to a repository referenced within a route!", e );
-
-                throw new ResourceException( Status.CLIENT_ERROR_FORBIDDEN );
-            }
-            catch ( NoSuchRepositoryException e )
-            {
-                getLogger().warn( "Cannot find a repository referenced within a route!", e );
-
-                throw new PlexusResourceException(
-                                                   Status.CLIENT_ERROR_BAD_REQUEST,
-                                                   "Cannot find a repository referenced within a route!",
-                                                   getNexusErrorResponse( "repositories",
-                                                                          "Cannot find a repository referenced within a route!" ) );
-            }*/
+            /*
+             * catch ( NoSuchRepositoryAccessException e ) { getLogger().debug(
+             * "Access Denied to a repository referenced within a route!", e ); throw new ResourceException(
+             * Status.CLIENT_ERROR_FORBIDDEN ); } catch ( NoSuchRepositoryException e ) { getLogger().warn(
+             * "Cannot find a repository referenced within a route!", e ); throw new PlexusResourceException(
+             * Status.CLIENT_ERROR_BAD_REQUEST, "Cannot find a repository referenced within a route!",
+             * getNexusErrorResponse( "repositories", "Cannot find a repository referenced within a route!" ) ); }
+             */
             catch ( IOException e )
             {
                 getLogger().warn( "Got IO Exception!", e );
@@ -237,7 +244,12 @@ public class RepositoryRoutePlexusResource
         return result;
     }
 
+    /**
+     * Deletes a repository route by it's ID.
+     */
     @Override
+    @DELETE
+    @ResourceMethodSignature( pathParams = { @PathParam( AbstractRepositoryRoutePlexusResource.ROUTE_ID_KEY ) } )
     public void delete( Context context, Request request, Response response )
         throws ResourceException
     {

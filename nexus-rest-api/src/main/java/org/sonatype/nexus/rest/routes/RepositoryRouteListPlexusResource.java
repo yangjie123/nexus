@@ -19,6 +19,13 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.regex.PatternSyntaxException;
 
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+
+import org.codehaus.enunciate.contract.jaxrs.ResourceMethodSignature;
 import org.codehaus.plexus.component.annotations.Component;
 import org.restlet.Context;
 import org.restlet.data.Request;
@@ -48,6 +55,9 @@ import org.sonatype.plexus.rest.resource.error.ErrorResponse;
  * @author tstevens
  */
 @Component( role = PlexusResource.class, hint = "RepositoryRouteListPlexusResource" )
+@Path( "/repo_routes" )
+@Produces( { "application/xml", "application/json" } )
+@Consumes( { "application/xml", "application/json" } )
 public class RepositoryRouteListPlexusResource
     extends AbstractRepositoryRoutePlexusResource
 {
@@ -75,7 +85,12 @@ public class RepositoryRouteListPlexusResource
         return new PathProtectionDescriptor( getResourceUri(), "authcBasic,perms[nexus:routes]" );
     }
 
+    /**
+     * Returns the list of existing repository routes in Nexus.
+     */
     @Override
+    @GET
+    @ResourceMethodSignature( output = RepositoryRouteListResourceResponse.class )
     public Object get( Context context, Request request, Response response, Variant variant )
         throws ResourceException
     {
@@ -107,8 +122,9 @@ public class RepositoryRouteListPlexusResource
                     // XXX: cstamas -- a hack!
                     resource.setPattern( item.getPatterns().get( 0 ).toString() );
 
-                    resource.setRepositories( getRepositoryRouteMemberRepositoryList( request.getResourceRef(), item
-                        .getMappedRepositories(), request ) );
+                    resource.setRepositories( getRepositoryRouteMemberRepositoryList( request.getResourceRef(),
+                                                                                      item.getMappedRepositories(),
+                                                                                      request ) );
 
                     result.addData( resource );
                 }
@@ -130,7 +146,12 @@ public class RepositoryRouteListPlexusResource
         return result;
     }
 
+    /**
+     * Creates a new repository route.
+     */
     @Override
+    @POST
+    @ResourceMethodSignature( input = RepositoryRouteResourceResponse.class, output = RepositoryRouteResourceResponse.class )
     public Object post( Context context, Request request, Response response, Object payload )
         throws ResourceException
     {
@@ -169,8 +190,8 @@ public class RepositoryRouteListPlexusResource
 
                 RepositoryPathMapping route =
                     new RepositoryPathMapping( resource.getId(), resource2configType( resource.getRuleType() ),
-                                               resource.getGroupId(), Arrays.asList( new String[] { resource
-                                                   .getPattern() } ), mappedReposes );
+                                               resource.getGroupId(),
+                                               Arrays.asList( new String[] { resource.getPattern() } ), mappedReposes );
 
                 getRepositoryMapper().addMapping( route );
 
@@ -198,18 +219,15 @@ public class RepositoryRouteListPlexusResource
             {
                 // TODO: fix because this happens before we validate, we need to fix the validation.
                 ErrorResponse errorResponse = getNexusErrorResponse( "*", e.getMessage() );
-                throw new PlexusResourceException( Status.CLIENT_ERROR_BAD_REQUEST, "Configuration error.", errorResponse );
+                throw new PlexusResourceException( Status.CLIENT_ERROR_BAD_REQUEST, "Configuration error.",
+                                                   errorResponse );
             }
-/*            catch ( NoSuchRepositoryException e )
-            {
-                getLogger().warn( "Cannot find a repository referenced within a route!", e );
-
-                throw new PlexusResourceException(
-                                                   Status.CLIENT_ERROR_BAD_REQUEST,
-                                                   "Cannot find a repository referenced within a route!",
-                                                   getNexusErrorResponse( "repositories",
-                                                                          "Cannot find a repository referenced within a route!" ) );
-            }*/
+            /*
+             * catch ( NoSuchRepositoryException e ) { getLogger().warn(
+             * "Cannot find a repository referenced within a route!", e ); throw new PlexusResourceException(
+             * Status.CLIENT_ERROR_BAD_REQUEST, "Cannot find a repository referenced within a route!",
+             * getNexusErrorResponse( "repositories", "Cannot find a repository referenced within a route!" ) ); }
+             */
             catch ( IOException e )
             {
                 getLogger().warn( "Got IO Exception!", e );

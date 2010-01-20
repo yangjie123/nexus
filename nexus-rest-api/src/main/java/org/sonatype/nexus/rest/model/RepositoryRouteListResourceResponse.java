@@ -7,11 +7,14 @@
 
 package org.sonatype.nexus.rest.model;
 
+import javax.xml.bind.annotation.XmlRootElement;
+
 /**
  * Class RepositoryRouteListResourceResponse.
  * 
  * @version $Revision$ $Date$
  */
+@XmlRootElement( name = "repo-routes-list" )
 public class RepositoryRouteListResourceResponse
     extends NexusResponse
     implements java.io.Serializable
