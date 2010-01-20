@@ -15,6 +15,12 @@ package org.sonatype.nexus.rest.wastebasket;
 
 import java.io.IOException;
 
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+
+import org.codehaus.enunciate.contract.jaxrs.ResourceMethodSignature;
 import org.codehaus.plexus.component.annotations.Component;
 import org.codehaus.plexus.component.annotations.Requirement;
 import org.restlet.Context;
@@ -39,15 +45,17 @@ import org.sonatype.plexus.rest.resource.PlexusResource;
  * @author tstevens
  */
 @Component( role = PlexusResource.class, hint = "wastebasket" )
+@Path( "/wastebasket" )
+@Produces( { "application/xml", "application/json" } )
 public class WastebasketPlexusResource
     extends AbstractNexusPlexusResource
 {
     @Requirement
     private Wastebasket wastebasket;
-    
+
     @Requirement
     private NexusScheduler nexusScheduler;
-    
+
     @Override
     public Object getPayloadInstance()
     {
@@ -66,7 +74,12 @@ public class WastebasketPlexusResource
         return new PathProtectionDescriptor( "/wastebasket**", "authcBasic,perms[nexus:wastebasket]" );
     }
 
+    /**
+     * Shows the overall size and number of items in the trash.
+     */
     @Override
+    @GET
+    @ResourceMethodSignature( output = WastebasketResourceResponse.class )
     public Object get( Context context, Request request, Response response, Variant variant )
         throws ResourceException
     {
@@ -91,7 +104,12 @@ public class WastebasketPlexusResource
         }
     }
 
+    /**
+     * Empties trash, in asynchronous mode.
+     */
     @Override
+    @DELETE
+    @ResourceMethodSignature
     public void delete( Context context, Request request, Response response )
         throws ResourceException
     {

@@ -7,29 +7,31 @@
 
 package org.sonatype.nexus.rest.model;
 
+import javax.xml.bind.annotation.XmlRootElement;
+
 /**
  * Class WastebasketResourceResponse.
  * 
  * @version $Revision$ $Date$
  */
+@XmlRootElement( name = "wastebasket" )
 public class WastebasketResourceResponse
     extends NexusResponse
     implements java.io.Serializable
 {
 
-      //--------------------------/
-     //- Class/Member Variables -/
-    //--------------------------/
+    // --------------------------/
+    // - Class/Member Variables -/
+    // --------------------------/
 
     /**
      * Field data.
      */
     private WastebasketResource data;
 
-
-      //-----------/
-     //- Methods -/
-    //-----------/
+    // -----------/
+    // - Methods -/
+    // -----------/
 
     /**
      * Get the data field.
@@ -39,7 +41,7 @@ public class WastebasketResourceResponse
     public WastebasketResource getData()
     {
         return this.data;
-    } //-- WastebasketResource getData()
+    } // -- WastebasketResource getData()
 
     /**
      * Set the data field.
@@ -49,7 +51,6 @@ public class WastebasketResourceResponse
     public void setData( WastebasketResource data )
     {
         this.data = data;
-    } //-- void setData( WastebasketResource )
-
+    } // -- void setData( WastebasketResource )
 
 }

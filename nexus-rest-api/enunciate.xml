@@ -19,6 +19,8 @@
 
   <modules>
 
+    <jersey usePathBasedConneg="false"  />
+    
   <!-- Off for now -->
   <!-- 
     <jersey disabled="true" />
