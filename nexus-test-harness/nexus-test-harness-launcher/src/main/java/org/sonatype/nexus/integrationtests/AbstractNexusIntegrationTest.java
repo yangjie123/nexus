@@ -57,6 +57,8 @@ import org.restlet.data.Response;
 import org.restlet.data.Status;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 import org.sonatype.nexus.artifact.Gav;
+import org.sonatype.nexus.integrationtests.rt.boot.ITAppBooterCustomizer;
+import org.sonatype.nexus.integrationtests.rt.prefs.FilePreferencesFactory;
 import org.sonatype.nexus.proxy.registry.RepositoryTypeRegistry;
 import org.sonatype.nexus.test.utils.DeployUtils;
 import org.sonatype.nexus.test.utils.FileTestingUtils;
@@ -121,6 +123,12 @@ public abstract class AbstractNexusIntegrationTest
     protected static final String nexusLogDir;
 
     protected static Logger log = Logger.getLogger( AbstractNexusIntegrationTest.class );
+
+    // Install the file preferences, to have them used from IT but also from embedded Nexus too.
+    static
+    {
+        System.setProperty( "java.util.prefs.PreferencesFactory", FilePreferencesFactory.class.getName() );
+    }
 
     /**
      * Flag that says if we should verify the config before startup, we do not want to do this for upgrade tests.
@@ -228,6 +236,10 @@ public abstract class AbstractNexusIntegrationTest
 
         // configure the logging
         SLF4JBridgeHandler.install();
+
+        // redirect filePrefs
+        FilePreferencesFactory.setPreferencesFile( ITAppBooterCustomizer.getFilePrefsFile( new File( getNexusBaseDir() ),
+            getTestId() ) );
     }
 
     // == Test "lifecycle" (@Before/@After...)
@@ -670,7 +682,7 @@ public abstract class AbstractNexusIntegrationTest
 
         try
         {
-            getNexusStatusUtil().start();
+            getNexusStatusUtil().start( getTestId() );
         }
         catch ( Exception e )
         {

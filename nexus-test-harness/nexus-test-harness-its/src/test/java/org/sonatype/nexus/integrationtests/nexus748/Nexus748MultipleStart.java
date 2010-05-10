@@ -26,7 +26,8 @@ import org.sonatype.nexus.integrationtests.AbstractNexusIntegrationTest;
 import org.sonatype.nexus.integrationtests.TestContainer;
 import org.sonatype.nexus.integrationtests.TestContext;
 
-public class Nexus748MultipleStart extends AbstractNexusIntegrationTest
+public class Nexus748MultipleStart
+    extends AbstractNexusIntegrationTest
 {
 
     protected static Logger logger = Logger.getLogger( Nexus748MultipleStart.class );
@@ -41,7 +42,7 @@ public class Nexus748MultipleStart extends AbstractNexusIntegrationTest
         NexusClient client = (NexusClient) getITPlexusContainer().lookup( NexusClient.ROLE );
         TestContext context = TestContainer.getInstance().getTestContext();
         client.connect( AbstractNexusIntegrationTest.nexusBaseUrl, context.getAdminUsername(),
-                        context.getAdminPassword() );
+            context.getAdminPassword() );
 
         // enable security
         getNexusConfigUtil().enableSecurity( true );
@@ -55,7 +56,7 @@ public class Nexus748MultipleStart extends AbstractNexusIntegrationTest
             stopWatch.start();
 
             // start
-            getNexusStatusUtil().start();
+            getNexusStatusUtil().start( getTestId() );
 
             Assert.assertTrue( client.isNexusStarted( true ) );
 
