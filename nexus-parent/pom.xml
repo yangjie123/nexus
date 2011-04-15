@@ -31,7 +31,7 @@
 
   <groupId>org.sonatype.nexus</groupId>
   <artifactId>nexus-parent</artifactId>
-  <version>21-SNAPSHOT</version>
+  <version>21-INSIGHT-SNAPSHOT</version>
 
   <packaging>pom</packaging>
   <name>Nexus : Parent</name>
@@ -51,7 +51,7 @@
   </distributionManagement>
 
   <properties>
-    <runtime-platform.version>2-SNAPSHOT</runtime-platform.version>
+    <runtime-platform.version>2-INSIGHT-SNAPSHOT</runtime-platform.version>
     <nexus-site-base-url>https://repository.sonatype.org/content/sites/maven-sites/nexus-oss</nexus-site-base-url>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
