@@ -80,7 +80,7 @@
     <dependency>
       <groupId>org.sonatype.sisu.inject</groupId>
       <artifactId>guice-servlet</artifactId>
-      <version>3.0.1-SNAPSHOT</version>
+      <version>3.0.2</version>
       <exclusions>
         <exclusion>
           <groupId>org.sonatype.sisu</groupId>
