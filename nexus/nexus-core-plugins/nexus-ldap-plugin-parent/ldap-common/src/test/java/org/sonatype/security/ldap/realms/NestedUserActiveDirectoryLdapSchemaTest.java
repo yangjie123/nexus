@@ -22,13 +22,14 @@ import java.util.Set;
 
 import junit.framework.Assert;
 
-import org.codehaus.plexus.PlexusTestCase;
-import org.codehaus.plexus.context.Context;
 import org.apache.shiro.authc.AuthenticationException;
 import org.apache.shiro.authc.AuthenticationInfo;
 import org.apache.shiro.authc.UsernamePasswordToken;
 import org.apache.shiro.realm.Realm;
 import org.apache.shiro.realm.ldap.LdapContextFactory;
+import org.codehaus.plexus.context.Context;
+import org.junit.Test;
+import org.sonatype.nexus.test.PlexusTestCaseSupport;
 import org.sonatype.security.ldap.dao.LdapAuthConfiguration;
 import org.sonatype.security.ldap.dao.LdapGroupDAO;
 import org.sonatype.security.ldap.dao.LdapUser;
@@ -36,9 +37,8 @@ import org.sonatype.security.ldap.dao.LdapUserDAO;
 import org.sonatype.security.ldap.dao.NoSuchLdapUserException;
 import org.sonatype.security.ldap.realms.persist.LdapConfiguration;
 
-
 public class NestedUserActiveDirectoryLdapSchemaTest
-extends PlexusTestCase
+    extends PlexusTestCaseSupport
 {
 
     private LdapConfiguration ldapConfiguration;
@@ -54,52 +54,48 @@ extends PlexusTestCase
     @Override
     protected void customizeContext( Context context )
     {
-       super.customizeContext( context );
+        super.customizeContext( context );
 
-       String classname = this.getClass().getName();
-       context.put( "test-path", getBasedir() +"/target/test-classes/"+ classname.replace( '.', '/' ) );
+        String classname = this.getClass().getName();
+        context.put( "test-path", getBasedir() + "/target/test-classes/" + classname.replace( '.', '/' ) );
     }
-
 
     /*
      * (non-Javadoc)
-     *
      * @see org.sonatype.ldaptestsuite.AbstractLdapTestEnvironment#setUp()
      */
     @Override
     public void setUp()
         throws Exception
     {
-     // configure the logging
-//        SLF4JBridgeHandler.install();
+        // configure the logging
+        // SLF4JBridgeHandler.install();
 
         super.setUp();
 
         this.ldapGroupManager = this.lookup( LdapGroupDAO.class );
         this.ldapConfiguration = this.lookup( LdapConfiguration.class );
-        this.ldapContextFactory = this.lookup(
-            LdapContextFactory.class,
-            "PlexusLdapContextFactory" );
+        this.ldapContextFactory = this.lookup( LdapContextFactory.class, "PlexusLdapContextFactory" );
         this.ldapUserManager = (LdapUserDAO) lookup( LdapUserDAO.class.getName() );
         this.realm = this.lookup( Realm.class, "LdapAuthenticatingRealm" );
     }
 
+    @Test
     public void testUserManager()
         throws Exception
     {
         LdapAuthConfiguration configuration = this.ldapConfiguration.getLdapAuthConfiguration();
 
-        LdapUser user = this.ldapUserManager.getUser( "tstevens", this.ldapContextFactory.getSystemLdapContext(), configuration );
-        assertEquals( "tstevens", user.getUsername() );
-        assertEquals( "Toby Stevens", user.getRealName() );
+        LdapUser user =
+            this.ldapUserManager.getUser( "tstevens", this.ldapContextFactory.getSystemLdapContext(), configuration );
+        Assert.assertEquals( "tstevens", user.getUsername() );
+        Assert.assertEquals( "Toby Stevens", user.getRealName() );
 
         try
         {
-            user = this.ldapUserManager.getUser(
-                "intruder",
-                this.ldapContextFactory.getSystemLdapContext(),
-                configuration );
-            fail( "Expected NoSuchUserException" );
+            user =
+                this.ldapUserManager.getUser( "intruder", this.ldapContextFactory.getSystemLdapContext(), configuration );
+            Assert.fail( "Expected NoSuchUserException" );
         }
         catch ( NoSuchLdapUserException e )
         {
@@ -107,17 +103,20 @@ extends PlexusTestCase
         }
     }
 
+    @Test
     public void testGroupManager()
         throws Exception
     {
         LdapAuthConfiguration configuration = ldapConfiguration.getLdapAuthConfiguration();
 
-        Set<String> groups = this.ldapGroupManager.getGroupMembership( "tstevens", this.ldapContextFactory
-            .getSystemLdapContext(), configuration );
+        Set<String> groups =
+            this.ldapGroupManager.getGroupMembership( "tstevens", this.ldapContextFactory.getSystemLdapContext(),
+                configuration );
 
-        assertTrue("Groups: "+ groups, groups.contains( "Administrators" ) );
+        Assert.assertTrue( "Groups: " + groups, groups.contains( "Administrators" ) );
     }
 
+    @Test
     public void testSuccessfulAuthentication()
         throws Exception
     {
@@ -126,14 +125,15 @@ extends PlexusTestCase
 
         AuthenticationInfo ai = realm.getAuthenticationInfo( upToken );
 
-        assertNull( ai.getCredentials() );
+        Assert.assertNull( ai.getCredentials() );
 
-//        String password = new String( (char[]) ai.getCredentials() );
-//
-//        // password is plain text
-//        assertEquals( "brianf123", password );
+        // String password = new String( (char[]) ai.getCredentials() );
+        //
+        // // password is plain text
+        // Assert.assertEquals( "brianf123", password );
     }
 
+    @Test
     public void testWrongPassword()
         throws Exception
     {
@@ -149,6 +149,7 @@ extends PlexusTestCase
         }
     }
 
+    @Test
     public void testFailedAuthentication()
     {
 
@@ -168,6 +169,5 @@ extends PlexusTestCase
     {
         return false;
     }
-
 
 }

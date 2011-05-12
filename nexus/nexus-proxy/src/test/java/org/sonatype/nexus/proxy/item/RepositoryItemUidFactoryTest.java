@@ -23,8 +23,11 @@ import java.util.Collection;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import junit.framework.Assert;
-import junit.framework.AssertionFailedError;
+import org.junit.Assert;
+import org.junit.Test;
+
+import static org.hamcrest.MatcherAssert.*;
+import static org.hamcrest.Matchers.*;
 
 import org.sonatype.jettytestsuite.ServletServer;
 import org.sonatype.nexus.proxy.AbstractProxyTestEnvironment;
@@ -59,6 +62,7 @@ public class RepositoryItemUidFactoryTest
         factory = lookup( RepositoryItemUidFactory.class );
     }
 
+    @Test
     public void testDamianClaim()
         throws Exception
     {
@@ -78,7 +82,7 @@ public class RepositoryItemUidFactoryTest
         {
             e.printStackTrace();
             // damian wins
-            fail( "Beer for damian, please!" );
+            Assert.fail( "Beer for damian, please!" );
         }
         catch ( IllegalMonitorStateException e )
         {
@@ -89,31 +93,26 @@ public class RepositoryItemUidFactoryTest
         catch ( Exception e )
         {
             e.printStackTrace();
-            fail( "No beer for anyone" );
+            Assert.fail( "No beer for anyone" );
         }
     }
 
-    public void testHardAttack()
+    // @Test( expected = AssertionError.class )
+    public void testHardAttackWithBrokenFactoryThatShouldFail()
         throws Exception
     {
-        // try with the fixed one
-        hardAttack( factory );
-
         RepositoryItemUidFactory brokenFactory = lookup( RepositoryItemUidFactory.class, "broken" );
-
-        try
-        {
-            hardAttack( brokenFactory );
-
-            fail( "Test with broken factory should fail!" );
-        }
-        catch ( AssertionFailedError e )
-        {
-            // should fail
-        }
+        hardAttack( brokenFactory );
     }
 
-    public void hardAttack( RepositoryItemUidFactory factory )
+    @Test
+    public void testHardAttackWithStandardFactoryThatShouldPass()
+        throws Exception
+    {
+        hardAttack( factory );
+    }
+
+    protected void hardAttack( RepositoryItemUidFactory factory )
         throws Exception
     {
         final int count = 3000;
@@ -178,16 +177,15 @@ public class RepositoryItemUidFactoryTest
         {
             Collection<RepositoryItemUid> uids = uidMap.get( key );
 
-            Assert.assertEquals( "There should be as many UIDs for \"" + uids.iterator().next()
-                + "\" as many thread getting them!", threadPerPath, uids.size() );
+            assertThat( "There should be as many UIDs for \"" + uids.iterator().next()
+                + "\" as many thread getting them!", uids, hasSize( threadPerPath ) );
 
-            RepositoryItemUid firstUid = uids.iterator().next();
-
+            final RepositoryItemUid firstUid = uids.iterator().next();
+            final DefaultRepositoryItemUid expected = (DefaultRepositoryItemUid) firstUid;
             for ( RepositoryItemUid uid : uids )
             {
-                Assert.assertEquals( "Have to have same instance!",
-                    ( (DefaultRepositoryItemUid) firstUid ).toDebugString(),
-                    ( (DefaultRepositoryItemUid) uid ).toDebugString() );
+                DefaultRepositoryItemUid actual = (DefaultRepositoryItemUid) uid;
+                assertThat(actual, sameInstance( expected ) );
             }
         }
     }

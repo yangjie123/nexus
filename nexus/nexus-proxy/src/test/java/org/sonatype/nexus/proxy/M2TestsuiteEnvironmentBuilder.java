@@ -43,7 +43,7 @@ import org.sonatype.nexus.proxy.repository.Repository;
 
 /**
  * The Class JettyTestsuiteEnvironment.
- * 
+ *
  * @author cstamas
  */
 public class M2TestsuiteEnvironmentBuilder
@@ -96,14 +96,14 @@ public class M2TestsuiteEnvironmentBuilder
             exConf.setChecksumPolicy( ChecksumPolicy.STRICT_IF_EXISTS );
 
             repoConf.setRemoteStorage( new CRemoteStorage() );
-            repoConf.getRemoteStorage().setProvider( "apacheHttpClient3x" );
+            repoConf.getRemoteStorage().setProvider( env.getRemoteProviderHintFactory().getDefaultHttpRoleHint() );
             repoConf.getRemoteStorage().setUrl( getServletServer().getUrl( remoteRepo.getName() ) );
 
             repo.configure( repoConf );
 
             // repo.setCacheManager( env.getCacheManager() );
             reposes.add( repo.getId() );
-            
+
             env.getApplicationConfiguration().getConfigurationModel().addRepository( repoConf );
 
             env.getRepositoryRegistry().addRepository( repo );

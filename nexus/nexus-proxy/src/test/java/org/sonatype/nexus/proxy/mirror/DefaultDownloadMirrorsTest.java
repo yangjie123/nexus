@@ -21,6 +21,7 @@ package org.sonatype.nexus.proxy.mirror;
 import java.util.Arrays;
 import java.util.List;
 
+import org.junit.Test;
 import org.sonatype.configuration.ConfigurationException;
 import org.sonatype.nexus.configuration.application.ApplicationConfiguration;
 import org.sonatype.nexus.configuration.model.CRemoteStorage;
@@ -28,12 +29,14 @@ import org.sonatype.nexus.configuration.model.CRepositoryCoreConfiguration;
 import org.sonatype.nexus.configuration.model.DefaultCRepository;
 import org.sonatype.nexus.proxy.AbstractNexusTestCase;
 import org.sonatype.nexus.proxy.repository.Mirror;
-import org.sonatype.nexus.proxy.storage.remote.commonshttpclient.CommonsHttpClientRemoteStorage;
+import org.sonatype.nexus.proxy.storage.remote.RemoteProviderHintFactory;
 
 public class DefaultDownloadMirrorsTest
     extends AbstractNexusTestCase
 {
     protected ApplicationConfiguration applicationConfiguration;
+
+    protected RemoteProviderHintFactory remoteProviderHintFactory;
 
     @Override
     protected void setUp()
@@ -42,8 +45,11 @@ public class DefaultDownloadMirrorsTest
         super.setUp();
 
         applicationConfiguration = lookup( ApplicationConfiguration.class );
+
+        remoteProviderHintFactory = lookup( RemoteProviderHintFactory.class );
     }
 
+    @Test
     public void testNoMirrors()
     {
         DefaultDownloadMirrors mirrors = newDefaultDownloadMirrors( null );
@@ -61,7 +67,7 @@ public class DefaultDownloadMirrorsTest
         DefaultCRepository conf = new DefaultCRepository();
         conf.setId( "kuku" );
         conf.setRemoteStorage( new CRemoteStorage() );
-        conf.getRemoteStorage().setProvider( CommonsHttpClientRemoteStorage.PROVIDER_STRING );
+        conf.getRemoteStorage().setProvider( remoteProviderHintFactory.getDefaultHttpRoleHint() );
         conf.getRemoteStorage().setUrl( "http://repo1.maven.org/maven2/" );
         conf.setIndexable( false );
 
@@ -87,6 +93,7 @@ public class DefaultDownloadMirrorsTest
         return dMirrors;
     }
 
+    @Test
     public void testSimpleMirrorSelection()
     {
         Mirror[] mirrors = new Mirror[] { new Mirror( "1", "mirror1" ), new Mirror( "2", "mirror2" ) };
@@ -110,6 +117,7 @@ public class DefaultDownloadMirrorsTest
         selector.close();
     }
 
+    @Test
     public void testFailure()
     {
         Mirror[] mirrors = new Mirror[] { new Mirror( "1", "mirror1" ), new Mirror( "2", "mirror2" ) };
@@ -129,6 +137,7 @@ public class DefaultDownloadMirrorsTest
         assertEquals( mirrors[1], dMirrors.openSelector( null ).getMirrors().get( 0 ) );
     }
 
+    @Test
     public void testBlacklistDecay()
         throws Exception
     {
@@ -156,6 +165,7 @@ public class DefaultDownloadMirrorsTest
 
     }
 
+    @Test
     public void testSetUrls()
         throws Exception
     {
@@ -181,6 +191,7 @@ public class DefaultDownloadMirrorsTest
         assertEquals( true, dMirrors.isBlacklisted( mirrors[0] ) );
     }
 
+    @Test
     public void testFailureThenSuccess()
     {
         Mirror[] mirrors = new Mirror[] { new Mirror( "1", "mirror1" ), new Mirror( "2", "mirror2" ) };

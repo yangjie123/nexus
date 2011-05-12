@@ -22,10 +22,11 @@ import java.io.IOException;
 
 import org.codehaus.plexus.component.annotations.Requirement;
 import org.sonatype.configuration.ConfigurationException;
-import org.sonatype.nexus.Nexus;
+import org.sonatype.nexus.configuration.application.NexusConfiguration;
 import org.sonatype.nexus.configuration.model.CRepository;
 import org.sonatype.nexus.configuration.model.CRepositoryCoreConfiguration;
 import org.sonatype.nexus.proxy.registry.ContentClass;
+import org.sonatype.nexus.proxy.registry.RepositoryTypeDescriptor;
 import org.sonatype.nexus.proxy.registry.RepositoryTypeRegistry;
 import org.sonatype.nexus.proxy.repository.Repository;
 import org.sonatype.nexus.proxy.storage.remote.RemoteProviderHintFactory;
@@ -44,20 +45,20 @@ public abstract class AbstractRepositoryTemplateProvider
     private RepositoryTypeRegistry repositoryTypeRegistry;
 
     @Requirement
-    private Nexus nexus;
-    
+    private NexusConfiguration nexusConfiguration;
+
     @Requirement
     private RemoteProviderHintFactory remoteProviderHintFactory;
 
     protected Repository createRepository( CRepository repository )
         throws ConfigurationException, IOException
     {
-        return this.nexus.getNexusConfiguration().createRepository( repository );
+        return nexusConfiguration.createRepository( repository );
     }
-    
-    public String getDefaultRemoteProviderHint()
+
+    public RemoteProviderHintFactory getRemoteProviderHintFactory()
     {
-        return remoteProviderHintFactory.getDefaultRoleHint();
+        return remoteProviderHintFactory;
     }
 
     public Class<RepositoryTemplate> getTemplateClass()
@@ -76,11 +77,26 @@ public abstract class AbstractRepositoryTemplateProvider
     }
 
     public ManuallyConfiguredRepositoryTemplate createManuallyTemplate( CRepositoryCoreConfiguration configuration )
+        throws ConfigurationException
     {
-        ContentClass contentClass =
-            repositoryTypeRegistry.getRepositoryContentClass(
-                configuration.getConfiguration( false ).getProviderRole(),
-                configuration.getConfiguration( false ).getProviderHint() );
+        final CRepository repoConfig = configuration.getConfiguration( false );
+
+        RepositoryTypeDescriptor rtd =
+            repositoryTypeRegistry.getRepositoryTypeDescriptor( repoConfig.getProviderRole(),
+                repoConfig.getProviderHint() );
+
+        if ( rtd == null )
+        {
+            final String msg =
+                String.format(
+                    "Repository being created \"%s\" (repoId=%s) has corresponding type that is not registered in Core: Repository type %s:%s is unknown to Nexus Core. It is probably contributed by an old Nexus plugin. Please contact plugin developers to upgrade the plugin, and register the new repository type(s) properly!",
+                    repoConfig.getName(), repoConfig.getId(), repoConfig.getProviderRole(),
+                    repoConfig.getProviderHint() );
+
+            throw new ConfigurationException( msg );
+        }
+
+        ContentClass contentClass = repositoryTypeRegistry.getRepositoryContentClass( rtd.getRole(), rtd.getHint() );
 
         return new ManuallyConfiguredRepositoryTemplate( this, "manual", "Manually created template", contentClass,
             null, configuration );

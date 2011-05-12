@@ -20,6 +20,7 @@ package org.sonatype.nexus.proxy;
 
 import org.apache.commons.httpclient.CustomMultiThreadedHttpConnectionManager;
 import org.apache.commons.httpclient.HttpClient;
+import org.junit.Test;
 import org.sonatype.jettytestsuite.ServletServer;
 import org.sonatype.nexus.proxy.item.RepositoryItemUid;
 import org.sonatype.nexus.proxy.item.StorageItem;
@@ -43,23 +44,34 @@ public class SimpleRemoteLeakTest
         return jettyTestsuiteEnvironmentBuilder;
     }
 
+    @Test
     public void testNothing()
     {
         assertTrue( true );
     }
 
+    @Test
     public void testSimplerRemoteLeak()
         throws Exception
     {
-        // mangle one repos to have quasi different host, thus different HttpCommons HostConfig
-        // but make it succeed! (127.0.0.1 is localhost, so will be able to connect)
-        getRepositoryRegistry().getRepositoryWithFacet( "repo1", ProxyRepository.class )
-            .setRemoteUrl(
-                           getRepositoryRegistry().getRepositoryWithFacet( "repo1", ProxyRepository.class )
-                               .getRemoteUrl().replace( "localhost", "127.0.0.1" ) );
-
         ProxyRepository repo1 = getRepositoryRegistry().getRepositoryWithFacet( "repo1", ProxyRepository.class );
         ProxyRepository repo2 = getRepositoryRegistry().getRepositoryWithFacet( "repo2", ProxyRepository.class );
+
+        // this test is CommonsHttpclient3x dependent, it uses it's internals in assertions!
+        // So run it only when that RRS is in use
+        if ( !( repo1.getRemoteStorage() instanceof CommonsHttpClientRemoteStorage ) )
+        {
+            System.out.println( "Test disabled, RRS implementation is not of class "
+                + CommonsHttpClientRemoteStorage.class.getName() + " but "
+                + repo1.getRemoteStorage().getClass().getName() );
+
+            return;
+        }
+
+        // mangle one repos to have quasi different host, thus different HttpCommons HostConfig
+        // but make it succeed! (127.0.0.1 is localhost, so will be able to connect)
+        repo1.setRemoteUrl( getRepositoryRegistry().getRepositoryWithFacet( "repo1", ProxyRepository.class ).getRemoteUrl().replace(
+            "localhost", "127.0.0.1" ) );
 
         ResourceStoreRequest req1 =
             new ResourceStoreRequest( "/repositories/repo1/activemq/activemq-core/1.2/activemq-core-1.2.jar", false );
@@ -75,29 +87,25 @@ public class SimpleRemoteLeakTest
             checkForFileAndMatchContents( item2 );
 
             // to force refetch
-            getRepositoryRegistry().getRepository( item1.getRepositoryId() )
-                .deleteItem( false, new ResourceStoreRequest( item1 ) );
+            getRepositoryRegistry().getRepository( item1.getRepositoryId() ).deleteItem( false,
+                new ResourceStoreRequest( item1 ) );
 
-            getRepositoryRegistry().getRepository( item2.getRepositoryId() )
-                .deleteItem( false, new ResourceStoreRequest( item2 ) );
+            getRepositoryRegistry().getRepository( item2.getRepositoryId() ).deleteItem( false,
+                new ResourceStoreRequest( item2 ) );
         }
 
         // get the default context, since they used it
         RemoteStorageContext ctx1 = repo1.getRemoteStorageContext();
 
         CustomMultiThreadedHttpConnectionManager cm1 =
-            (CustomMultiThreadedHttpConnectionManager) ( (HttpClient) ctx1
-                .getContextObject( CommonsHttpClientRemoteStorage.CTX_KEY_CLIENT ) )
-                .getHttpConnectionManager();
+            (CustomMultiThreadedHttpConnectionManager) ( (HttpClient) ctx1.getContextObject( CommonsHttpClientRemoteStorage.CTX_KEY_CLIENT ) ).getHttpConnectionManager();
 
         assertEquals( 1, cm1.getConnectionsInPool() );
 
         RemoteStorageContext ctx2 = repo2.getRemoteStorageContext();
 
         CustomMultiThreadedHttpConnectionManager cm2 =
-            (CustomMultiThreadedHttpConnectionManager) ( (HttpClient) ctx2
-                .getContextObject( CommonsHttpClientRemoteStorage.CTX_KEY_CLIENT ) )
-                .getHttpConnectionManager();
+            (CustomMultiThreadedHttpConnectionManager) ( (HttpClient) ctx2.getContextObject( CommonsHttpClientRemoteStorage.CTX_KEY_CLIENT ) ).getHttpConnectionManager();
 
         assertEquals( 1, cm2.getConnectionsInPool() );
     }
@@ -108,10 +116,9 @@ public class SimpleRemoteLeakTest
     {
         // mangle one repos to have quasi different host, thus different HttpCommons HostConfig
         // but make it fail! (unknown host, so will not be able to connect)
-        getRepositoryRegistry().getRepositoryWithFacet( "repo1", ProxyRepository.class )
-            .setRemoteUrl(
-                           getRepositoryRegistry().getRepositoryWithFacet( "repo1", ProxyRepository.class )
-                               .getRemoteUrl().replace( "localhost", "1.1.1.1" ) );
+        getRepositoryRegistry().getRepositoryWithFacet( "repo1", ProxyRepository.class ).setRemoteUrl(
+            getRepositoryRegistry().getRepositoryWithFacet( "repo1", ProxyRepository.class ).getRemoteUrl().replace(
+                "localhost", "1.1.1.1" ) );
 
         ProxyRepository repo1 = getRepositoryRegistry().getRepositoryWithFacet( "repo1", ProxyRepository.class );
         ProxyRepository repo2 = getRepositoryRegistry().getRepositoryWithFacet( "repo2", ProxyRepository.class );
@@ -123,8 +130,8 @@ public class SimpleRemoteLeakTest
 
         while ( RemoteStatus.UNKNOWN.equals( rs1 ) || RemoteStatus.UNKNOWN.equals( rs2 ) )
         {
-            rs1 = repo1.getRemoteStatus(new ResourceStoreRequest( RepositoryItemUid.PATH_ROOT ), false );
-            rs2 = repo2.getRemoteStatus(new ResourceStoreRequest( RepositoryItemUid.PATH_ROOT ), false );
+            rs1 = repo1.getRemoteStatus( new ResourceStoreRequest( RepositoryItemUid.PATH_ROOT ), false );
+            rs2 = repo2.getRemoteStatus( new ResourceStoreRequest( RepositoryItemUid.PATH_ROOT ), false );
 
             Thread.sleep( 1000 );
         }
@@ -133,18 +140,14 @@ public class SimpleRemoteLeakTest
         RemoteStorageContext ctx1 = repo1.getRemoteStorageContext();
 
         CustomMultiThreadedHttpConnectionManager cm1 =
-            (CustomMultiThreadedHttpConnectionManager) ( (HttpClient) ctx1
-                .getContextObject( CommonsHttpClientRemoteStorage.CTX_KEY_CLIENT ) )
-                .getHttpConnectionManager();
+            (CustomMultiThreadedHttpConnectionManager) ( (HttpClient) ctx1.getContextObject( CommonsHttpClientRemoteStorage.CTX_KEY_CLIENT ) ).getHttpConnectionManager();
 
         assertEquals( 1, cm1.getConnectionsInPool() );
 
         RemoteStorageContext ctx2 = repo2.getRemoteStorageContext();
 
         CustomMultiThreadedHttpConnectionManager cm2 =
-            (CustomMultiThreadedHttpConnectionManager) ( (HttpClient) ctx2
-                .getContextObject( CommonsHttpClientRemoteStorage.CTX_KEY_CLIENT ) )
-                .getHttpConnectionManager();
+            (CustomMultiThreadedHttpConnectionManager) ( (HttpClient) ctx2.getContextObject( CommonsHttpClientRemoteStorage.CTX_KEY_CLIENT ) ).getHttpConnectionManager();
 
         assertEquals( 1, cm2.getConnectionsInPool() );
     }

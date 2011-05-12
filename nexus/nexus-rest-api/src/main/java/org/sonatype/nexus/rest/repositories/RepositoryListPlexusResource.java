@@ -48,6 +48,7 @@ import org.sonatype.nexus.proxy.maven.RepositoryPolicy;
 import org.sonatype.nexus.proxy.maven.maven2.M2LayoutedM1ShadowRepositoryConfiguration;
 import org.sonatype.nexus.proxy.maven.maven2.M2RepositoryConfiguration;
 import org.sonatype.nexus.proxy.repository.LocalStatus;
+import org.sonatype.nexus.proxy.storage.remote.RemoteProviderHintFactory;
 import org.sonatype.nexus.rest.model.RepositoryBaseResource;
 import org.sonatype.nexus.rest.model.RepositoryListResourceResponse;
 import org.sonatype.nexus.rest.model.RepositoryProxyResource;
@@ -65,7 +66,7 @@ import org.sonatype.plexus.rest.resource.PlexusResourceException;
 
 /**
  * A resource list for Repository list.
- *
+ * 
  * @author cstamas
  */
 @Component( role = PlexusResource.class, hint = "RepositoryListPlexusResource" )
@@ -76,7 +77,10 @@ public class RepositoryListPlexusResource
     extends AbstractRepositoryPlexusResource
 {
     public static final String RESOURCE_URI = "/repositories";
-    
+
+    @Requirement
+    private RemoteProviderHintFactory remoteProviderHintFactory;
+
     // UGLY HACK, SEE BELOW
     @Requirement( role = TemplateProvider.class, hint = DefaultRepositoryTemplateProvider.PROVIDER_ID )
     private DefaultRepositoryTemplateProvider repositoryTemplateProvider;
@@ -143,9 +147,8 @@ public class RepositoryListPlexusResource
                 // All this should be removed, and do not use C* config classes anymore in REST API (see NEXUS-2505).
                 // For now, this is a "backdoor", using manual template when we have a CRepo object.
                 ManuallyConfiguredRepositoryTemplate template =
-                    repositoryTemplateProvider
-                        .createManuallyTemplate( new CRepositoryCoreConfiguration( repositoryTemplateProvider
-                            .getApplicationConfiguration(), config, null ) );
+                    repositoryTemplateProvider.createManuallyTemplate( new CRepositoryCoreConfiguration(
+                        repositoryTemplateProvider.getApplicationConfiguration(), config, null ) );
 
                 template.create();
 
@@ -171,7 +174,7 @@ public class RepositoryListPlexusResource
     /**
      * Converting REST DTO + possible App model to App model. If app model is given, "update" happens, otherwise if
      * target is null, "create".
-     *
+     * 
      * @param model
      * @param target
      * @return app model, merged or created
@@ -201,7 +204,7 @@ public class RepositoryListPlexusResource
         appModel.setName( resource.getName() );
 
         appModel.setExposed( resource.isExposed() );
-        
+
         appModel.setProviderRole( resource.getProviderRole() );
 
         if ( REPO_TYPE_VIRTUAL.equals( resource.getRepoType() ) )
@@ -263,7 +266,8 @@ public class RepositoryListPlexusResource
 
                 appModel.getRemoteStorage().setUrl( remoteStorage.getRemoteStorageUrl() );
 
-                appModel.getRemoteStorage().setProvider( "apacheHttpClient3x" );
+                appModel.getRemoteStorage().setProvider(
+                    remoteProviderHintFactory.getDefaultRoleHint( remoteStorage.getRemoteStorageUrl() ) );
             }
         }
 
@@ -280,7 +284,7 @@ public class RepositoryListPlexusResource
     /**
      * Converting REST DTO + possible App model to App model. If app model is given, "update" happens, otherwise if
      * target is null, "create".
-     *
+     * 
      * @param model
      * @param target
      * @return app model, merged or created
@@ -297,7 +301,7 @@ public class RepositoryListPlexusResource
         }
 
         exConf.setFileTypeValidation( model.isFileTypeValidation() );
-        
+
         exConf.setDownloadRemoteIndex( model.isDownloadRemoteIndexes() );
 
         exConf.setArtifactMaxAge( model.getArtifactMaxAge() );
@@ -319,18 +323,15 @@ public class RepositoryListPlexusResource
 
             // remote auth
             target.getRemoteStorage().setAuthentication(
-                                                         this.convertAuthentication( model.getRemoteStorage()
-                                                             .getAuthentication(), null ) );
+                this.convertAuthentication( model.getRemoteStorage().getAuthentication(), null ) );
 
             // connection settings
             target.getRemoteStorage().setConnectionSettings(
-                                                             this.convertRemoteConnectionSettings( model
-                                                                 .getRemoteStorage().getConnectionSettings() ) );
+                this.convertRemoteConnectionSettings( model.getRemoteStorage().getConnectionSettings() ) );
 
             // http proxy settings
             target.getRemoteStorage().setHttpProxySettings(
-                                                            this.convertHttpProxySettings( model.getRemoteStorage()
-                                                                .getHttpProxySettings(), null ) );
+                this.convertHttpProxySettings( model.getRemoteStorage().getHttpProxySettings(), null ) );
         }
 
         return target;

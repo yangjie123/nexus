@@ -381,7 +381,6 @@ public abstract class AbstractMavenRepository
 
     // =================================================================================
     // DefaultRepository customizations
-
     @Override
     protected StorageItem doRetrieveItem( ResourceStoreRequest request )
         throws IllegalOperationException, ItemNotFoundException, StorageException

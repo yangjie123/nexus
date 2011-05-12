@@ -635,17 +635,16 @@ public class DefaultNexusConfiguration
 
         if ( null == rtd )
         {
-            rtd =
-                new RepositoryTypeDescriptor( repositoryModel.getProviderRole(), repositoryModel.getProviderHint(),
-                    "repositories", RepositoryType.UNLIMITED_INSTANCES );
+            // no check done
+            String msg =
+                String.format(
+                    "Repository \"%s\" (repoId=%s) corresponding type is not registered in Core, hence it's maxInstace check cannot be performed: Repository type %s:%s is unknown to Nexus Core. It is probably contributed by an old Nexus plugin. Please contact plugin developers to upgrade the plugin, and register the new repository type(s) properly!",
+                    repositoryModel.getName(), repositoryModel.getId(), repositoryModel.getProviderRole(),
+                    repositoryModel.getProviderHint() );
 
-            getLogger().warn(
-                "Your Nexus instance contains a plugin, that contributes repository type " + rtd.toString()
-                    + " to Nexus, "
-                    + "but fails to properly register it (and it is not using Nexus Plugin API annotations either). "
-                    + "Please contact plugin developers to update their plugin! Registering the type on-the-fly." );
+            getLogger().warn( msg );
 
-            repositoryTypeRegistry.registerRepositoryTypeDescriptors( rtd );
+            return;
         }
 
         if ( rtd.getRepositoryMaxInstanceCount() != RepositoryType.UNLIMITED_INSTANCES )

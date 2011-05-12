@@ -34,11 +34,10 @@ package org.sonatype.security.ldap.upgrade.cipher;
  * under the License.
  */
 
-import org.codehaus.plexus.PlexusTestCase;
 import org.codehaus.plexus.util.StringUtils;
-import org.sonatype.security.ldap.upgrade.cipher.CryptoUtils;
-import org.sonatype.security.ldap.upgrade.cipher.PlexusCipher;
-import org.sonatype.security.ldap.upgrade.cipher.TestPlexusCipher;
+import org.junit.Assert;
+import org.junit.Test;
+import org.sonatype.nexus.test.PlexusTestCaseSupport;
 
 /**
  * Test the Plexus Cipher container
@@ -47,7 +46,7 @@ import org.sonatype.security.ldap.upgrade.cipher.TestPlexusCipher;
  * @version $Id$
  */
 public class DefaultPlexusCipherTest
-    extends PlexusTestCase
+    extends PlexusTestCaseSupport
 {
     private String passPhrase = "foofoo";
 
@@ -59,7 +58,7 @@ public class DefaultPlexusCipherTest
 
     // -------------------------------------------------------------
     @Override
-    public void setUp()
+    protected void setUp()
         throws Exception
     {
         super.setUp();
@@ -68,6 +67,7 @@ public class DefaultPlexusCipherTest
     }
 
     // -------------------------------------------------------------
+    @Test
     public void testDefaultAlgorithmExists()
         throws Exception
     {
@@ -75,7 +75,7 @@ public class DefaultPlexusCipherTest
             throw new Exception( "No default algoritm found in DefaultPlexusCipher" );
 
         String[] res = CryptoUtils.getCryptoImpls( "Cipher" );
-        assertNotNull( "No Cipher providers found in the current environment", res );
+        Assert.assertNotNull( "No Cipher providers found in the current environment", res );
 
         for ( String provider : res )
             if ( pc.algorithm.equalsIgnoreCase( provider ) )
@@ -84,12 +84,12 @@ public class DefaultPlexusCipherTest
         throw new Exception( "Cannot find default algorithm " + pc.algorithm + " in the current environment." );
     }
 
-    // -------------------------------------------------------------
+    // intentionally not a test?
     public void stestFindDefaultAlgorithm()
         throws Exception
     {
         String[] res = CryptoUtils.getServiceTypes();
-        assertNotNull( "No Cipher providers found in the current environment", res );
+        Assert.assertNotNull( "No Cipher providers found in the current environment", res );
 
         for ( String provider : CryptoUtils.getCryptoImpls( "Cipher" ) )
             try
@@ -105,41 +105,39 @@ public class DefaultPlexusCipherTest
             }
     }
 
-    // -------------------------------------------------------------
+    @Test
     public void testDecrypt()
         throws Exception
     {
         String res = pc.decrypt( encStr, passPhrase );
-        assertEquals( "Decryption did not produce desired result", str, res );
+        Assert.assertEquals( "Decryption did not produce desired result", str, res );
     }
 
-    // -------------------------------------------------------------
+    @Test
     public void testEncrypt()
         throws Exception
     {
         String xRes = pc.encrypt( str, passPhrase );
         String res = pc.decrypt( xRes, passPhrase );
-        assertEquals( "Encryption/Decryption did not produce desired result", str, res );
+        Assert.assertEquals( "Encryption/Decryption did not produce desired result", str, res );
     }
 
-    // -------------------------------------------------------------
+    @Test
     public void testDecorate()
         throws Exception
     {
         String res = pc.decorate( "aaa" );
-        assertEquals( "Decoration failed", PlexusCipher.ENCRYPTED_STRING_DECORATION_START + "aaa"
+        Assert.assertEquals( "Decoration failed", PlexusCipher.ENCRYPTED_STRING_DECORATION_START + "aaa"
             + PlexusCipher.ENCRYPTED_STRING_DECORATION_STOP, res );
     }
 
-    // -------------------------------------------------------------
+    @Test
     public void testUnDecorate()
         throws Exception
     {
         String res =
             pc.unDecorate( PlexusCipher.ENCRYPTED_STRING_DECORATION_START + "aaa"
                 + PlexusCipher.ENCRYPTED_STRING_DECORATION_STOP );
-        assertEquals( "Decoration failed", "aaa", res );
+        Assert.assertEquals( "Decoration failed", "aaa", res );
     }
-    // -------------------------------------------------------------
-    // -------------------------------------------------------------
 }
