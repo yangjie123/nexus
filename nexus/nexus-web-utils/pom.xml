@@ -75,6 +75,12 @@
     <dependency>
       <groupId>org.sonatype.plexus</groupId>
       <artifactId>plexus-restlet-bridge</artifactId>
+      <exclusions>
+      	<exclusion>
+      		<artifactId>servlet-api</artifactId>
+      		<groupId>org.mortbay.jetty</groupId>
+      	</exclusion>
+      </exclusions>
     </dependency>
     
     <dependency>
