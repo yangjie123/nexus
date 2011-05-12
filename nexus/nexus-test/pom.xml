@@ -22,7 +22,7 @@
   <parent>
     <groupId>org.sonatype.nexus</groupId>
     <artifactId>nexus</artifactId>
-    <version>1.9.2-SNAPSHOT</version>
+    <version>1.9.2-INSIGHT-SNAPSHOT</version>
   </parent>
 
   <artifactId>nexus-test</artifactId>
