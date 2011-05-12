@@ -22,6 +22,7 @@ import java.io.IOException;
 
 import org.codehaus.plexus.component.repository.exception.ComponentLookupException;
 import org.codehaus.plexus.util.xml.Xpp3Dom;
+import org.junit.Test;
 import org.sonatype.configuration.ConfigurationException;
 import org.sonatype.nexus.configuration.application.ApplicationConfiguration;
 import org.sonatype.nexus.configuration.model.CLocalStorage;
@@ -40,7 +41,7 @@ import org.sonatype.nexus.proxy.repository.Repository;
 /**
  * Here we test how RemoteStorageContext changes (http proxy, connection settings) are propagating, and are they
  * propagating correctly from proxy repo to global if set/changed.
- * 
+ *
  * @author cstamas
  */
 public class RemoteStorageSettingsInheritanceTest
@@ -104,7 +105,7 @@ public class RemoteStorageSettingsInheritanceTest
                 exConf.setChecksumPolicy( ChecksumPolicy.STRICT_IF_EXISTS );
 
                 repoConf.setRemoteStorage( new CRemoteStorage() );
-                repoConf.getRemoteStorage().setProvider( "apacheHttpClient3x" );
+                repoConf.getRemoteStorage().setProvider( abstractProxyTestEnvironment.getRemoteProviderHintFactory().getDefaultHttpRoleHint() );
                 repoConf.getRemoteStorage().setUrl( "http://whatever.server/foo/but/be/a/valid/url" );
 
                 repo.configure( repoConf );
@@ -117,6 +118,7 @@ public class RemoteStorageSettingsInheritanceTest
         };
     }
 
+    @Test
     public void testNEXUS3064PerRepo()
         throws Exception
     {
@@ -147,6 +149,7 @@ public class RemoteStorageSettingsInheritanceTest
             aProxyRepository.getRemoteStorageContext().getLastChanged() > rscChangeTs );
     }
 
+    @Test
     public void testNEXUS3064Global()
         throws Exception
     {

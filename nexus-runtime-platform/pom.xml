@@ -34,7 +34,7 @@
   <version>2-INSIGHT-SNAPSHOT</version>
 
   <packaging>pom</packaging>
-  <name>Nexus : Runtime Platform</name>
+  <name>Nexus Runtime Platform</name>
 
   <properties>
     <sisu-inject.version>2.2.2</sisu-inject.version>

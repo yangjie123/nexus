@@ -50,7 +50,11 @@
     </dependency>
     <dependency>
       <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
+      <artifactId>junit-dep</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.sonatype.nexus</groupId>
+      <artifactId>nexus-test-common</artifactId>
     </dependency>
   </dependencies>
   <build>
@@ -72,14 +76,14 @@
         <configuration>
           <descriptors>
             <descriptor>
-              src/main/assembly/repository-conversion-cli-assembly.xml 
-						</descriptor>
+              src/main/assembly/repository-conversion-cli-assembly.xml
+                        </descriptor>
           </descriptors>
           <archive>
             <manifest>
               <mainClass>
                 org.sonatype.nexus.tools.repository.RepositoryConvertorCli
-							</mainClass>
+                            </mainClass>
             </manifest>
           </archive>
         </configuration>

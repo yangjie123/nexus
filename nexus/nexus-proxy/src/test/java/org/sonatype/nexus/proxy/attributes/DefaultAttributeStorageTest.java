@@ -22,6 +22,9 @@ import java.io.File;
 
 import org.codehaus.plexus.util.FileUtils;
 import org.codehaus.plexus.util.xml.Xpp3Dom;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.MethodRule;
 import org.sonatype.nexus.configuration.model.CLocalStorage;
 import org.sonatype.nexus.configuration.model.CRepository;
 import org.sonatype.nexus.configuration.model.DefaultCRepository;
@@ -36,11 +39,19 @@ import org.sonatype.nexus.proxy.maven.RepositoryPolicy;
 import org.sonatype.nexus.proxy.maven.maven2.M2RepositoryConfiguration;
 import org.sonatype.nexus.proxy.repository.Repository;
 
+import com.carrotsearch.junitbenchmarks.BenchmarkRule;
+import com.carrotsearch.junitbenchmarks.annotation.AxisRange;
+import com.carrotsearch.junitbenchmarks.annotation.BenchmarkHistoryChart;
+import com.carrotsearch.junitbenchmarks.annotation.BenchmarkMethodChart;
+
 /**
  * AttributeStorage implementation driven by XStream.
- * 
+ *
  * @author cstamas
  */
+@BenchmarkHistoryChart()
+@BenchmarkMethodChart()
+@AxisRange(min = 0)
 public class DefaultAttributeStorageTest
     extends AbstractNexusTestEnvironment
 {
@@ -53,7 +64,11 @@ public class DefaultAttributeStorageTest
 
     protected File localStorageDirectory;
 
-    public void setUp()
+    @Rule
+    public MethodRule benchmarkRun = new BenchmarkRule();
+
+    @Override
+    protected void setUp()
         throws Exception
     {
         super.setUp();
@@ -93,6 +108,7 @@ public class DefaultAttributeStorageTest
         repository.configure( repoConf );
     }
 
+    @Test
     public void testSimplePutGet()
         throws Exception
     {
@@ -111,6 +127,7 @@ public class DefaultAttributeStorageTest
         assertTrue( "kuku".equals( file1.getAttributes().get( "kuku" ) ) );
     }
 
+    @Test
     public void testSimplePutGetNEXUS3911()
         throws Exception
     {
@@ -133,7 +150,7 @@ public class DefaultAttributeStorageTest
         // reverted back to "old" attributes
         File attributeFile = new File( ((DefaultFSAttributeStorage)attributeStorage).getWorkingDirectory(), repository.getId() + "/a.txt" );
         // File attributeFile = new File( localStorageDirectory, ".nexus/attributes/a.txt" );
-        
+
         FileUtils.fileWrite( attributeFile.getAbsolutePath(), "<file" );
 
         // try to read it, we should not get NPE
@@ -149,6 +166,7 @@ public class DefaultAttributeStorageTest
         assertNull( "file1 is corrupt, hence it should be null!", file1 );
     }
 
+    @Test
     public void testSimplePutDelete()
         throws Exception
     {

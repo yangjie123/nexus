@@ -39,11 +39,6 @@
 
   <dependencies>
     <dependency>
-      <groupId>org.sonatype.plugin</groupId>
-      <artifactId>plugin-api</artifactId>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
       <groupId>org.sonatype.nexus</groupId>
       <artifactId>nexus-configuration</artifactId>
       <scope>provided</scope>
@@ -75,6 +70,20 @@
       <groupId>org.sonatype.nexus</groupId>
       <artifactId>nexus-configuration</artifactId>
       <classifier>tests</classifier>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit-dep</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.sonatype.nexus</groupId>
+      <artifactId>nexus-test-common</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.hamcrest</groupId>
+      <artifactId>hamcrest-library</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>

@@ -34,13 +34,13 @@
   <version>21-INSIGHT-SNAPSHOT</version>
 
   <packaging>pom</packaging>
-  <name>Nexus : Parent</name>
+  <name>Nexus Parent</name>
   <url>${nexus-site-base-url}/nexus-parent</url>
 
   <scm>
-    <connection>scm:svn:http://svn.sonatype.org/nexus/trunk/nexus-parent</connection>
-    <url>http://svn.sonatype.org/nexus/trunk/nexus-parent</url>
-    <developerConnection>scm:svn:https://svn.sonatype.org/nexus/trunk/nexus-parent</developerConnection>
+    <connection>scm:git:git://github.com/sonatype/nexus.git</connection>
+    <developerConnection>scm:git:git@github.com:sonatype/nexus.git</developerConnection>
+    <url>https://github.com/sonatype/nexus</url>
   </scm>
   
   <distributionManagement>
@@ -54,7 +54,8 @@
     <runtime-platform.version>2-INSIGHT-SNAPSHOT</runtime-platform.version>
     <nexus-site-base-url>https://repository.sonatype.org/content/sites/maven-sites/nexus-oss</nexus-site-base-url>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-
+    <!-- failsafe plugin picks this up among others -->
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <jetty.version>6.1.19</jetty.version>
     <nexus.version>${project.version}</nexus.version>
     <debug-js>false</debug-js>
@@ -406,10 +407,10 @@
             <configuration>
               <rules>
                 <requireMavenVersion>
-                  <version>3.0</version>
+                  <version>[3.0,)</version>
                 </requireMavenVersion>
                 <requireJavaVersion>
-                  <version>1.6.0</version>
+                  <version>[1.6,)</version>
                 </requireJavaVersion>
               </rules>
             </configuration>

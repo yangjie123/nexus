@@ -26,7 +26,7 @@ import java.util.Random;
 
 import org.codehaus.plexus.ContainerConfiguration;
 import org.codehaus.plexus.PlexusConstants;
-import org.codehaus.plexus.PlexusTestCase;
+import org.sonatype.nexus.test.PlexusTestCaseSupport;
 import org.codehaus.plexus.context.Context;
 import org.codehaus.plexus.util.FileUtils;
 import org.codehaus.plexus.util.IOUtil;
@@ -34,11 +34,11 @@ import org.codehaus.plexus.util.io.RawInputStreamFacade;
 
 /**
  * Abstract test case for nexus tests. It is customizing the context and helps with nexus configurations.
- * 
+ *
  * @author cstamas
  */
 public abstract class AbstractNexusTestCase
-    extends PlexusTestCase
+    extends PlexusTestCaseSupport
 {
     public static final String WORK_CONFIGURATION_KEY = "nexus-work";
 
@@ -69,7 +69,7 @@ public abstract class AbstractNexusTestCase
         ctx.put( APPS_CONFIGURATION_KEY, appsHomeDir.getAbsolutePath() );
         ctx.put( CONF_DIR_KEY, confHomeDir.getAbsolutePath() );
     }
-    
+
     @Override
     protected void customizeContainerConfiguration( ContainerConfiguration configuration )
     {
@@ -81,6 +81,7 @@ public abstract class AbstractNexusTestCase
     protected void setUp()
         throws Exception
     {
+        // keep since PlexusTestCase is not JUnit4 annotated
         super.setUp();
 
         // simply to make sure customizeContext is handled before anything else
@@ -96,6 +97,7 @@ public abstract class AbstractNexusTestCase
     protected void tearDown()
         throws Exception
     {
+        // keep since PlexusTestCase is not JUnit4 annotated
         super.tearDown();
 
         cleanDir( plexusHomeDir );

@@ -113,6 +113,10 @@ import org.sonatype.nexus.proxy.repository.ProxyRepository;
 import org.sonatype.nexus.proxy.repository.Repository;
 import org.sonatype.nexus.proxy.repository.ShadowRepository;
 import org.sonatype.nexus.proxy.storage.local.fs.DefaultFSLocalRepositoryStorage;
+import org.sonatype.nexus.proxy.utils.RepositoryStringUtils;
+import org.sonatype.nexus.util.SystemPropertiesHelper;
+import org.sonatype.scheduling.TaskInterruptedException;
+import org.sonatype.scheduling.TaskUtil;
 
 /**
  * <p>
@@ -139,7 +143,7 @@ public class DefaultIndexerManager
 
     /** Context id local suffix */
     public static final String CTX_SUFIX = "-ctx";
-    
+
     /** Path prefix where index publishing happens */
     public static final String PUBLISHING_PATH_PREFIX = "/.index";
 
@@ -189,9 +193,7 @@ public class DefaultIndexerManager
     {
         // Note: this is needed and used in ITs only!
         // See org.sonatype.nexus.rt.boot.ITIndexerActivationEventInspector for details
-        boolean mavenIndexerBlockingCommits = Boolean.getBoolean( "mavenIndexerBlockingCommits" );
-
-        if ( mavenIndexerBlockingCommits )
+        if ( SystemPropertiesHelper.getBoolean( "mavenIndexerBlockingCommits", DefaultIndexingContext.BLOCKING_COMMIT ) )
         {
             DefaultIndexingContext.BLOCKING_COMMIT = true;
         }
@@ -871,6 +873,8 @@ public class DefaultIndexerManager
 
             if ( fullReindex )
             {
+                TaskUtil.checkInterruption();
+
                 context.purge();
 
                 deleteIndexItems( repository );
@@ -878,11 +882,15 @@ public class DefaultIndexerManager
 
             if ( repository.getRepositoryKind().isFacetAvailable( ProxyRepository.class ) )
             {
+                TaskUtil.checkInterruption();
+                
                 downloadRepositoryIndex( repository.adaptToFacet( ProxyRepository.class ), fullReindex );
             }
 
             if ( !repository.getRepositoryKind().isFacetAvailable( GroupRepository.class ) )
             {
+                TaskUtil.checkInterruption();
+
                 // update always true, since we manually manage ctx purge
                 nexusIndexer.scan( context, fromPath, null, true );
             }
@@ -933,6 +941,8 @@ public class DefaultIndexerManager
 
                 for ( Repository member : members )
                 {
+                    TaskUtil.checkInterruption();
+                    
                     downloadRepositoryIndex( member, processedRepositoryIds );
                 }
             }
@@ -940,6 +950,8 @@ public class DefaultIndexerManager
 
         if ( repository.getRepositoryKind().isFacetAvailable( ProxyRepository.class ) )
         {
+            TaskUtil.checkInterruption();
+            
             downloadRepositoryIndex( repository.adaptToFacet( ProxyRepository.class ), false );
         }
     }
@@ -982,7 +994,8 @@ public class DefaultIndexerManager
 
         try
         {
-
+            TaskUtil.checkInterruption();
+            
             // just keep the context 'out of service' while indexing, will be added at end
             boolean shouldDownloadRemoteIndex = mpr.isDownloadRemoteIndexes();
 
@@ -992,23 +1005,36 @@ public class DefaultIndexerManager
             {
                 try
                 {
-                    getLogger().info( "Trying to get remote index for repository " + repository.getId() );
+                    getLogger().info(
+                        RepositoryStringUtils.getFormattedMessage( "Trying to get remote index for repository %s",
+                            repository ) );
 
                     hasRemoteIndex = updateRemoteIndex( repository, forceFullUpdate );
 
                     if ( hasRemoteIndex )
                     {
-                        getLogger().info( "Remote indexes updated successfully for repository " + repository.getId() );
+                        getLogger().info(
+                            RepositoryStringUtils.getFormattedMessage(
+                                "Remote indexes updated successfully for repository %s", repository ) );
                     }
                     else
                     {
                         getLogger().info(
-                            "Remote indexes unchanged (no update needed) for repository " + repository.getId() );
+                            RepositoryStringUtils.getFormattedMessage(
+                                "Remote indexes unchanged (no update needed) for repository %s", repository ) );
                     }
+                }
+                catch ( TaskInterruptedException e )
+                {
+                    getLogger().warn(
+                        RepositoryStringUtils.getFormattedMessage(
+                            "Cannot fetch remote index for repository %s, task cancelled.", repository ) );
                 }
                 catch ( Exception e )
                 {
-                    getLogger().warn( "Cannot fetch remote index for repository " + repository.getId(), e );
+                    getLogger().warn(
+                        RepositoryStringUtils.getFormattedMessage( "Cannot fetch remote index for repository %s",
+                            repository ), e );
                 }
             }
 
@@ -1024,6 +1050,8 @@ public class DefaultIndexerManager
     protected boolean updateRemoteIndex( final ProxyRepository repository, boolean forceFullUpdate )
         throws IOException, IllegalOperationException, ItemNotFoundException
     {
+        TaskUtil.checkInterruption();
+
         // this will force remote check for newer files
         repository.expireCaches( new ResourceStoreRequest( PUBLISHING_PATH_PREFIX ) );
 
@@ -1044,6 +1072,8 @@ public class DefaultIndexerManager
             public InputStream retrieve( String name )
                 throws IOException
             {
+                TaskUtil.checkInterruption();
+
                 ResourceStoreRequest req = new ResourceStoreRequest( PUBLISHING_PATH_PREFIX + "/" + name );
 
                 try
@@ -1091,6 +1121,8 @@ public class DefaultIndexerManager
 
             updateRequest.setDocumentFilter( getFilterFor( mrepository.getRepositoryPolicy() ) );
         }
+
+        TaskUtil.checkInterruption();
 
         IndexUpdateResult result = indexUpdater.fetchAndUpdateIndex( updateRequest );
 
@@ -1169,10 +1201,14 @@ public class DefaultIndexerManager
 
                 for ( Repository member : members )
                 {
+                    TaskUtil.checkInterruption();
+                    
                     publishRepositoryIndex( member, processedRepositoryIds );
                 }
             }
         }
+
+        TaskUtil.checkInterruption();
 
         publishRepositoryIndex( repository );
     }
@@ -1211,7 +1247,9 @@ public class DefaultIndexerManager
 
         try
         {
-            getLogger().info( "Publishing best index for repository " + repository.getId() );
+            TaskUtil.checkInterruption();
+
+            getLogger().info( "Publishing index for repository " + repository.getId() );
 
             IndexingContext context = getRepositoryIndexContext( repository );
 
@@ -1235,6 +1273,8 @@ public class DefaultIndexerManager
             {
                 for ( File file : files )
                 {
+                    TaskUtil.checkInterruption();
+                    
                     storeIndexItem( repository, file, context );
                 }
             }
@@ -1381,10 +1421,14 @@ public class DefaultIndexerManager
 
                 for ( Repository member : group.getMemberRepositories() )
                 {
+                    TaskUtil.checkInterruption();
+
                     optimizeIndex( member, processedRepositoryIds );
                 }
             }
         }
+
+        TaskUtil.checkInterruption();
 
         optimizeRepositoryIndex( repository );
     }
@@ -1399,6 +1443,8 @@ public class DefaultIndexerManager
 
         // local
         IndexingContext context = getRepositoryIndexContext( repository );
+
+        TaskUtil.checkInterruption();
 
         if ( context != null )
         {
