@@ -18,44 +18,51 @@
  */
 package org.sonatype.nexus.proxy.item;
 
-import org.sonatype.nexus.proxy.NoSuchRepositoryException;
-import org.sonatype.nexus.proxy.repository.Repository;
-
-public interface RepositoryItemUidFactory
+/**
+ * Before you continue using this class, stop and read carefully it's description. This "smart" lock is NOT an improved
+ * implementation of Java's ReentrantReadWriteLock in any way. It does NOT implement the unsupported atomic
+ * lock-upgrade. All this class allows is following pattern:
+ * 
+ * <pre>
+ *   ...
+ *   lock.lockShared();
+ *   try {
+ *     ...
+ *     lock.lockExclusively();
+ *     try {
+ *       ...
+ *     } finally {
+ *       lock.unlock();
+ *     }
+ *     ...
+ *   } finally {
+ *     lock.unlock();
+ *   }
+ * </pre>
+ * 
+ * @author cstamas
+ */
+public interface LockResource
 {
     /**
-     * Creates an UID based on a Repository reference and a path.
-     * 
-     * @param repository
-     * @param path
-     * @return
+     * Acquires a shared lock. Blocks until successful.
      */
-    RepositoryItemUid createUid( Repository repository, String path );
+    void lockShared();
 
     /**
-     * Parses an "uid string representation" and creates an UID for it. Uid String representation is of form '<repoId> +
-     * ':' + <path>'.
-     * 
-     * @param uidStr
-     * @return
-     * @throws IllegalArgumentException
-     * @throws NoSuchRepositoryException
+     * Acquires an exclusive lock. Blocks until successful.
      */
-    public RepositoryItemUid createUid( String uidStr )
-        throws IllegalArgumentException, NoSuchRepositoryException;
+    void lockExclusively();
 
     /**
-     * Creates a shared UIDLock based on a uid reference.
-     * 
-     * @param uid
-     * @return
+     * Unlocks the last acquired lock.
      */
-    RepositoryItemUidLock createUidLock( RepositoryItemUid uid );
+    void unlock();
 
     /**
-     * Releases a shared UIDLock.
+     * Returns true if the caller thread owns locks of any kinds on this lock.
      * 
-     * @param uid
+     * @return
      */
-    void releaseUidLock( RepositoryItemUidLock uidLock );
+    boolean hasLocksHeld();
 }

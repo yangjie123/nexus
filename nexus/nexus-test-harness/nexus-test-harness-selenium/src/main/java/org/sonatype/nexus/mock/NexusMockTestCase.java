@@ -38,6 +38,7 @@ import org.apache.maven.wagon.authorization.AuthorizationException;
 import org.codehaus.plexus.PlexusContainer;
 import org.codehaus.plexus.component.annotations.Requirement;
 import org.codehaus.plexus.component.repository.exception.ComponentLookupException;
+import org.codehaus.plexus.context.Context;
 import org.codehaus.plexus.personality.plexus.lifecycle.phase.Initializable;
 import org.codehaus.plexus.personality.plexus.lifecycle.phase.InitializationException;
 import org.sonatype.appbooter.PlexusAppBooter;
@@ -48,6 +49,7 @@ import org.sonatype.nexus.test.utils.FileTestingUtils;
 import org.sonatype.nexus.test.utils.GavUtil;
 import org.sonatype.nexus.test.utils.TestProperties;
 import org.sonatype.nexus.test.utils.WagonDeployer;
+import org.sonatype.nexus.testng.PlexusObjectFactory;
 import org.testng.Assert;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
@@ -67,7 +69,7 @@ public abstract class NexusMockTestCase
     protected static Logger log = Logger.getLogger( NexusMockTestCase.class );
 
     @Requirement
-    private PlexusContainer container;
+    private PlexusContainer container = PlexusObjectFactory.getContainer();
 
     @BeforeSuite
     public synchronized void startNexus()
@@ -93,7 +95,10 @@ public abstract class NexusMockTestCase
 
             nexusBaseURL = TestProperties.getString( "nexus.base.url" );
 
-            env = new MockNexusEnvironment( (PlexusAppBooter) container.getContext().get( "plexus.app.booter" ) );
+            Context context = container.getContext();
+            Assert.assertNotNull(context);
+
+            env = new MockNexusEnvironment( (PlexusAppBooter) context.get( "plexus.app.booter" ) );
             // Don't do this env.start();
 
             Runtime.getRuntime().addShutdownHook( new Thread( new Runnable()
@@ -283,6 +288,8 @@ public abstract class NexusMockTestCase
         return env.getPlexusContainer().lookup( role, hint );
     }
 
+    @BeforeClass
+    @Override
     public void initialize()
         throws InitializationException
     {
