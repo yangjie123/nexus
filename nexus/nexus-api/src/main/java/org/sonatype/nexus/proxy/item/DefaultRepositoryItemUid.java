@@ -85,7 +85,7 @@ public class DefaultRepositoryItemUid
     @Override
     public synchronized RepositoryItemUidLock getLock()
     {
-        if ( lock == null || lock.isReleased() )
+        if ( lock == null )
         {
             lock = factory.createUidLock( this );
         }
