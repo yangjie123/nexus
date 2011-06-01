@@ -38,6 +38,7 @@
 
   <properties>
     <sisu-inject.version>2.2.2</sisu-inject.version>
+    <sisu-guice.version>3.0.2</sisu-guice.version>
   </properties>
 
   <dependencyManagement>
@@ -52,14 +53,14 @@
       <dependency>
         <groupId>org.sonatype.sisu</groupId>
         <artifactId>sisu-guice</artifactId>
-        <version>3.0.2</version>
+        <version>${sisu-guice.version}</version>
         <classifier>no_aop</classifier>
         <scope>compile</scope>
       </dependency>
       <dependency>
         <groupId>org.sonatype.sisu</groupId>
         <artifactId>sisu-guice</artifactId>
-        <version>3.0.2</version>
+        <version>${sisu-guice.version}</version>
         <scope>compile</scope>
       </dependency>
       <dependency>
