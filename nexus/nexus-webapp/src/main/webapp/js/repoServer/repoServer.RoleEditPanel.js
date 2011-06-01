@@ -260,8 +260,8 @@ Sonatype.repoServer.ExternapRoleMappingPopup = function(config) {
                     store : this.roleStore,
                     displayField : 'name',
                     valueField : 'roleId',
-                    editable : false,
-                    forceSelection : true,
+                    editable : true,
+                    forceSelection : false,
                     mode : 'local',
                     triggerAction : 'all',
                     lastQuery : '',
@@ -272,7 +272,7 @@ Sonatype.repoServer.ExternapRoleMappingPopup = function(config) {
               buttons : [{
                     text : 'Create Mapping',
                     formBind : true,
-                    handler : this.createRoleMapping,
+                    handler : this.validateRoleMapping,
                     scope : this,
                     disabled : true
                   }, {
@@ -294,7 +294,28 @@ Ext.extend(Sonatype.repoServer.ExternapRoleMappingPopup, Ext.Window, {
         roleCombo.store.filter('source', rec.data.roleHint);
       },
 
-      createRoleMapping : function(button, e) {
+      validateRoleMapping : function(button, e) {
+        var roleId = this.find('name', 'roleId')[0].getValue();
+        var sourceId = this.find('name', 'source')[0].getValue();
+
+        Ext.Ajax.request({
+              url : Sonatype.config.servicePath + '/external_role_map/' + sourceId + '/' + roleId,
+              callback : function(options, isSuccess, response) {
+                if (isSuccess)
+                {
+                  this.createRoleMapping();
+                }
+                else
+                {
+                  this.find('name', 'roleId')[0].markInvalid('Role not found!');
+                }
+              },
+              scope : this,
+              method : 'GET',
+              suppressStatus : '404'
+            });
+      },
+      createRoleMapping : function() {
         if (this.hostPanel)
         {
           var roleId = this.find('name', 'roleId')[0].getValue();

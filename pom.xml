@@ -26,10 +26,10 @@
 
   <groupId>org.sonatype.nexus</groupId>
   <artifactId>nexus-aggregator</artifactId>
-  <version>1-INSIGHT-SNAPSHOT</version>
+  <version>1.9.2-INSIGHT-SNAPSHOT</version>
 
   <packaging>pom</packaging>
-  <name>Nexus Aggregator</name>
+  <name>Nexus : Aggregator</name>
   <description>Sonatype Nexus Aggregator</description>
 
   <properties>
@@ -46,7 +46,7 @@
   
   <build>
     <plugins>
-        <!-- Manually run with: mvn clean license:format -->
+        <!-- Manually run with: mvn clean com.mycila.maven-license-plugin:maven-license-plugin:1.9.0:format -->
         <plugin>
           <groupId>com.mycila.maven-license-plugin</groupId>
           <artifactId>maven-license-plugin</artifactId>
@@ -57,19 +57,24 @@
             <useDefaultExcludes>false</useDefaultExcludes>
             <includes>
               <include>**/*.java</include>
-              <include>**/*.js</include>
               <include>**/*.vm</include>
               <include>**/*.xml</include>
               <include>**/*.groovy</include>
-              <include>**/*.aj</include>
+              <include>**/*.aj</include>   
+              <include>**/*.css</include>
+              <include>**/*.html</include>
+              <include>**/*.js</include>
             </includes>
             <excludes>
+              <exclude>**/target/**</exclude>
               <exclude>**/ext-2.3/**</exclude>
               <exclude>**/js/filetree/**</exclude>
               <exclude>**/editarea_0_8_2/**</exclude>
+              <!-- FIXME is this really a good idea excluding all test resources? -->
               <exclude>**/src/test/resources/**</exclude>
               <exclude>**/nexus-repository-metadata/**</exclude>
-              <exclude>**/gwt/ext/ui/**.js</exclude>
+              <exclude>**/gwt/ext/ui/**/*.js</exclude>
+              <exclude>**/gwt/ext/ui/**/*.css</exclude>
               <exclude>**/nexus/nexus-test-harness/nexus-test-harness-its/resources/**</exclude>
             </excludes>
             <mapping>

@@ -34,7 +34,7 @@
   <version>21-INSIGHT-SNAPSHOT</version>
 
   <packaging>pom</packaging>
-  <name>Nexus Parent</name>
+  <name>Nexus : Parent</name>
   <url>${nexus-site-base-url}/nexus-parent</url>
 
   <scm>
@@ -51,7 +51,6 @@
   </distributionManagement>
 
   <properties>
-    <runtime-platform.version>2-INSIGHT-SNAPSHOT</runtime-platform.version>
     <nexus-site-base-url>https://repository.sonatype.org/content/sites/maven-sites/nexus-oss</nexus-site-base-url>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <!-- failsafe plugin picks this up among others -->
@@ -67,7 +66,7 @@
       <dependency>
         <groupId>org.sonatype.nexus</groupId>
         <artifactId>nexus-runtime-platform</artifactId>
-        <version>${runtime-platform.version}</version>
+        <version>1.9.2-INSIGHT-SNAPSHOT</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
