@@ -942,7 +942,7 @@ public abstract class AbstractProxyRepository
                     }
                 }
 
-                // Optimization
+                // NEXUS-4621: Optimization
                 // If we have localItem, we know it's isOld()=true (otherwise the return would kick in above),
                 // then do a HEAD request, and if it matches localItem's timestamp,
                 // just return what we have without entering the exclusively locked region.
@@ -974,6 +974,7 @@ public abstract class AbstractProxyRepository
                     catch ( RemoteStorageException ex )
                     {
                         autoBlockProxying( ex );
+
                         return localItem;
                     }
                 }
