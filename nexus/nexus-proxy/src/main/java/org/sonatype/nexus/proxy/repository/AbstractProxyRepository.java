@@ -656,7 +656,7 @@ public abstract class AbstractProxyRepository
     /**
      * Sets the item max age in (in minutes).
      * 
-     * @param itemMaxAgeInSeconds the new item max age in (in minutes).
+     * @param itemMaxAge the new item max age in (in minutes).
      */
     public void setItemMaxAge( int itemMaxAge )
     {
@@ -939,6 +939,41 @@ public abstract class AbstractProxyRepository
                     catch ( ItemNotFoundException e )
                     {
                         localItem = null;
+                    }
+                }
+
+                // Optimization
+                // If we have localItem, we know it's isOld()=true (otherwise the return would kick in above),
+                // then do a HEAD request, and if it matches localItem's timestamp,
+                // just return what we have without entering the exclusively locked region.
+                // We still have the read (shared) lock so we are sure the localItem is unchanged.
+                // Also, we have to obey all the conditions whether we can do remote requests or not...
+                if ( localItem != null && !request.isRequestLocalOnly() && getProxyMode() != null
+                    && getProxyMode().shouldProxy() )
+                {
+                    try
+                    {
+                        // check remote does it have newer than localItem
+                        final boolean isRemoteNewerThanLocal = doCheckRemoteItemExistence( localItem, request );
+
+                        if ( !isRemoteNewerThanLocal )
+                        {
+                            if ( getLogger().isDebugEnabled() )
+                            {
+                                getLogger().debug(
+                                    "No newer version of item " + request.toString() + " found on remote storage." );
+                            }
+
+                            // if does not, we still have to mark the fact we checked to maintain the correctness of aging algorithm
+                            markItemRemotelyChecked( request );
+
+                            // and return what we have locally, since remote has no newer version
+                            return localItem;
+                        }
+                    }
+                    catch ( RemoteStorageException ex )
+                    {
+                        autoBlockProxying( ex );
                     }
                 }
 
