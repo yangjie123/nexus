@@ -989,6 +989,13 @@
         <version>${project.version}</version>
       </dependency>
       <dependency>
+          <groupId>org.sonatype.nexus</groupId>
+          <artifactId>nexus-api</artifactId>
+          <version>${project.version}</version>
+          <classifier>tests</classifier>
+          <scope>test</scope>
+        </dependency>
+      <dependency>
         <groupId>org.sonatype.nexus</groupId>
         <artifactId>nexus-oss-edition</artifactId>
         <version>${project.version}</version>

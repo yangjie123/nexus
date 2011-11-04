@@ -26,10 +26,11 @@ import java.io.IOException;
 import org.apache.commons.io.FilenameUtils;
 import org.codehaus.plexus.component.annotations.Component;
 import org.codehaus.plexus.component.annotations.Requirement;
-import org.codehaus.plexus.logging.Logger;
 import org.codehaus.plexus.personality.plexus.lifecycle.phase.Disposable;
 import org.codehaus.plexus.personality.plexus.lifecycle.phase.Initializable;
 import org.codehaus.plexus.util.IOUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.sonatype.nexus.configuration.ConfigurationChangeEvent;
 import org.sonatype.nexus.configuration.application.ApplicationConfiguration;
 import org.sonatype.nexus.proxy.access.Action;
@@ -50,24 +51,28 @@ import org.sonatype.plexus.appevents.EventListener;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.XStreamException;
 
+import javax.enterprise.inject.Typed;
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.inject.Singleton;
+
 /**
  * AttributeStorage implementation driven by XStream. This implementation uses it's own FS storage to store attributes
  * in separate place then LocalStorage. This is the "old" default storage.
  * 
  * @author cstamas
  */
-@Component( role = AttributeStorage.class )
+@Named
+@Typed( value = AttributeStorage.class )
+@Singleton
 public class DefaultFSAttributeStorage
     implements AttributeStorage, EventListener, Initializable, Disposable
 {
-    @Requirement
-    private Logger logger;
+    private Logger logger = LoggerFactory.getLogger( DefaultFSAttributeStorage.class );
 
-    @Requirement
-    private ApplicationEventMulticaster applicationEventMulticaster;
+    final private ApplicationEventMulticaster applicationEventMulticaster;
 
-    @Requirement
-    private ApplicationConfiguration applicationConfiguration;
+    final private ApplicationConfiguration applicationConfiguration;
 
     /** The xstream. */
     private final XStream xstream;
@@ -79,10 +84,18 @@ public class DefaultFSAttributeStorage
 
     /**
      * Instantiates a new FSX stream attribute storage.
+     *
+     * @param applicationEventMulticaster
+     * @param applicationConfiguration
      */
-    public DefaultFSAttributeStorage()
+    @Inject
+    public DefaultFSAttributeStorage( final ApplicationEventMulticaster applicationEventMulticaster, final ApplicationConfiguration applicationConfiguration)
     {
         super();
+
+        this.applicationConfiguration = applicationConfiguration;
+        this.applicationEventMulticaster = applicationEventMulticaster;
+
         this.xstream = new XStream();
         this.xstream.alias( "file", DefaultStorageFileItem.class );
         this.xstream.alias( "compositeFile", DefaultStorageCompositeFileItem.class );
@@ -351,7 +364,6 @@ public class DefaultFSAttributeStorage
      * Gets the attributes.
      * 
      * @param uid the uid
-     * @param isCollection the is collection
      * @return the attributes
      * @throws IOException Signals that an I/O exception has occurred.
      */
@@ -448,7 +460,6 @@ public class DefaultFSAttributeStorage
      * Gets the file from base.
      * 
      * @param uid the uid
-     * @param isCollection the is collection
      * @return the file from base
      */
     protected File getFileFromBase( final RepositoryItemUid uid )
