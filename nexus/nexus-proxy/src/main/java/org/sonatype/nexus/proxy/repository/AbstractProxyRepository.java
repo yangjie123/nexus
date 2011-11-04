@@ -974,6 +974,7 @@ public abstract class AbstractProxyRepository
                     catch ( RemoteStorageException ex )
                     {
                         autoBlockProxying( ex );
+                        return localItem;
                     }
                 }
 
