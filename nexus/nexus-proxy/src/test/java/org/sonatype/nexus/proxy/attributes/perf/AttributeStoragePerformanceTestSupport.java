@@ -22,6 +22,7 @@ import com.carrotsearch.junitbenchmarks.BenchmarkRule;
 import com.carrotsearch.junitbenchmarks.annotation.AxisRange;
 import com.carrotsearch.junitbenchmarks.annotation.BenchmarkHistoryChart;
 import com.carrotsearch.junitbenchmarks.annotation.BenchmarkMethodChart;
+import org.apache.commons.io.FileUtils;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -34,6 +35,7 @@ import org.sonatype.nexus.proxy.ResourceStoreRequest;
 import org.sonatype.nexus.proxy.attributes.AttributeStorage;
 import org.sonatype.nexus.proxy.attributes.DefaultFSAttributeStorage;
 import org.sonatype.nexus.proxy.item.AbstractStorageItem;
+import org.sonatype.nexus.proxy.item.ContentLocator;
 import org.sonatype.nexus.proxy.item.DefaultRepositoryItemUid;
 import org.sonatype.nexus.proxy.item.DefaultStorageFileItem;
 import org.sonatype.nexus.proxy.item.DummyRepositoryItemUidFactory;
@@ -45,9 +47,11 @@ import org.sonatype.nexus.proxy.item.StringContentLocator;
 import org.sonatype.nexus.proxy.item.uid.Attribute;
 import org.sonatype.nexus.proxy.item.uid.IsMetadataMaintainedAttribute;
 import org.sonatype.nexus.proxy.repository.Repository;
+import org.sonatype.nexus.proxy.storage.local.fs.FileContentLocator;
 import org.sonatype.plexus.appevents.ApplicationEventMulticaster;
 
 import java.io.File;
+import java.io.IOException;
 
 import static org.mockito.Mockito.*;
 
@@ -73,12 +77,13 @@ public abstract class AttributeStoragePerformanceTestSupport
 
     final private DummyRepositoryItemUidFactory repositoryItemUidFactory = new DummyRepositoryItemUidFactory();
 
-    // AbstractStorageItem getAttributes( RepositoryItemUid uid );
-    // void putAttribute( StorageItem item );
-    // boolean deleteAttributes( RepositoryItemUid uid );
+    final private File CONTENT_TEST_FILE = new File( "target/" + getClass().getSimpleName() + "/testContent.txt" );
 
     final private String SHA1_ATTRIBUTE_KEY = "digest.sha1";
+
     final private String SHA1_ATTRIBUTE_VALUE = "100f4ae295695335ef5d3346b42ed81ecd063fc9";
+
+    final private static int ITERATION_COUNT = 10000;
 
     @Before
     public void setupRepositoryMock()
@@ -104,6 +109,12 @@ public abstract class AttributeStoragePerformanceTestSupport
         this.attributeStorage = getAttributeStorage();
     }
 
+    @Before
+    public void setupContentFile() throws IOException
+    {
+        FileUtils.writeStringToFile( CONTENT_TEST_FILE, "CONTENT" );
+    }
+
     public abstract AttributeStorage getAttributeStorage();
 
     //////////////
@@ -113,6 +124,7 @@ public abstract class AttributeStoragePerformanceTestSupport
     public void test0PrimePutAttribute()
     {
         writeEntryToAttributeStorage( "/prime.txt" );
+        getStorageItemFromAttributeStore( "/prime.txt" );
     }
 
     @Test
@@ -124,7 +136,7 @@ public abstract class AttributeStoragePerformanceTestSupport
     @Test
     public void test2PutAttributeX100()
     {
-        for( int ii=0; ii<100; ii++)
+        for( int ii=0; ii< ITERATION_COUNT; ii++)
         {
             writeEntryToAttributeStorage( "/"+ii+".txt" );
         }
@@ -140,7 +152,7 @@ public abstract class AttributeStoragePerformanceTestSupport
     @Test
     public void test4GetAttributeX100()
     {
-        for( int ii=0; ii<100; ii++)
+        for( int ii=0; ii< ITERATION_COUNT; ii++)
         {
             getStorageItemFromAttributeStore( "/"+ii+".txt" );
         }
@@ -155,7 +167,7 @@ public abstract class AttributeStoragePerformanceTestSupport
     @Test
     public void test6DeleteAttributesX100()
     {
-        for( int ii=0; ii<100; ii++)
+        for( int ii=0; ii< ITERATION_COUNT; ii++)
         {
             deleteStorageItemFromAttributeStore( "/"+ii+".txt" );
         }
@@ -163,7 +175,7 @@ public abstract class AttributeStoragePerformanceTestSupport
 
     private void writeEntryToAttributeStorage( String path )
     {
-        StorageFileItem storageFileItem = new DefaultStorageFileItem( repository, new ResourceStoreRequest( path ), true, true, new StringContentLocator( "CONTENT" ) );
+        StorageFileItem storageFileItem = new DefaultStorageFileItem( repository, new ResourceStoreRequest( path ), true, true, getContentLocator() );
 
         storageFileItem.getAttributes().put( SHA1_ATTRIBUTE_KEY, SHA1_ATTRIBUTE_VALUE );
         storageFileItem.getAttributes().put( "digest.md5", "f62472816fb17de974a87513e2257d63" );
@@ -185,6 +197,19 @@ public abstract class AttributeStoragePerformanceTestSupport
         RepositoryItemUid repositoryItemUid = new TestRepositoryItemUid(repositoryItemUidFactory, repository, path );
         assertThat( "Attribute was not removed from store.", attributeStorage.deleteAttributes( repositoryItemUid ) );
     }
+
+    private ContentLocator getContentLocator()
+    {
+        if( true )
+        {
+            return new StringContentLocator( "CONTENT" );
+        }
+        else
+        {
+            return new FileContentLocator( CONTENT_TEST_FILE, "text/plain" );
+        }
+    }
+
 
     class TestRepositoryItemUid extends DefaultRepositoryItemUid
     {

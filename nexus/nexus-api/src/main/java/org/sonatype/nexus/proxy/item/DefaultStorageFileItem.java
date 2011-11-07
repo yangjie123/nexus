@@ -21,14 +21,19 @@ package org.sonatype.nexus.proxy.item;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.plexus.util.StringUtils;
 import org.sonatype.nexus.proxy.ResourceStoreRequest;
 import org.sonatype.nexus.proxy.repository.Repository;
 import org.sonatype.nexus.proxy.router.RepositoryRouter;
 
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlRootElement;
+
 /**
  * The Class DefaultStorageFileItem.
  */
+@XmlRootElement(name = "file")
 public class DefaultStorageFileItem
     extends AbstractStorageItem
     implements StorageFileItem
@@ -38,8 +43,10 @@ public class DefaultStorageFileItem
     private static final long serialVersionUID = 3608889194663697395L;
 
     /** The input stream. */
+    @JsonIgnore
     private transient ContentLocator contentLocator;
 
+    @XmlElement
     private long length;
 
     /**
@@ -47,6 +54,7 @@ public class DefaultStorageFileItem
      * 
      * @deprecated The mime-type is now coming from ContentLocator, see getMimeType() method body.
      */
+    @JsonIgnore
     private String mimeType;
 
     /**
@@ -63,6 +71,12 @@ public class DefaultStorageFileItem
     {
         super( repository, request, canRead, canWrite );
         this.contentLocator = contentLocator;
+    }
+
+    public DefaultStorageFileItem()
+    {
+        super();
+        //FIXME:  Quick hack, remove me
     }
 
     /**
@@ -122,12 +136,14 @@ public class DefaultStorageFileItem
         return getContentLocator().getMimeType();
     }
 
+    @JsonIgnore
     @Override
     public boolean isReusableStream()
     {
         return getContentLocator().isReusable();
     }
 
+    @JsonIgnore
     @Override
     public InputStream getInputStream()
         throws IOException

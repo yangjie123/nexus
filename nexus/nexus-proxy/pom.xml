@@ -135,6 +135,22 @@
       <groupId>org.apache.maven</groupId>
       <artifactId>maven-aether-provider</artifactId>
     </dependency>
+    <dependency>
+      <groupId>org.codehaus.jackson</groupId>
+      <artifactId>jackson-mapper-asl</artifactId>
+      <version>1.9.2</version>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml</groupId>
+      <artifactId>jackson-xml-databind</artifactId>
+      <version>0.6.1</version>
+      <exclusions>
+        <exclusion>
+          <groupId>javax.xml.stream</groupId>
+          <artifactId>stax-api</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
     <!-- Sisu -->
     <dependency>
       <groupId>org.sonatype.sisu</groupId>

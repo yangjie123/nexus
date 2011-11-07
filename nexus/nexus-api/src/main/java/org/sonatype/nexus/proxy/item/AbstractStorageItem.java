@@ -29,6 +29,8 @@ import org.sonatype.nexus.proxy.repository.Repository;
 import org.sonatype.nexus.proxy.router.RepositoryRouter;
 import org.sonatype.nexus.util.ItemPathUtils;
 
+import javax.xml.bind.annotation.XmlElement;
+
 /**
  * The Class AbstractStorageItem.
  * 
@@ -53,6 +55,7 @@ public abstract class AbstractStorageItem
     private int generation = 0;
 
     /** The path. */
+    @XmlElement
     private String path;
 
     /** The readable. */
@@ -141,6 +144,11 @@ public abstract class AbstractStorageItem
         this.store = router;
         this.repositoryItemUid = null;
         this.repositoryId = null;
+    }
+
+    public AbstractStorageItem()
+    {
+        //FIXME:  Quick hack, remove me
     }
 
     /**

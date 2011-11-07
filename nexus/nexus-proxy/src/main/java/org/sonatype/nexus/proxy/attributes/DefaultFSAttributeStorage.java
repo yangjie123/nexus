@@ -22,6 +22,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 
 import org.apache.commons.io.FilenameUtils;
 import org.codehaus.plexus.component.annotations.Component;
@@ -65,22 +66,11 @@ import javax.inject.Singleton;
 @Named
 @Typed( value = AttributeStorage.class )
 @Singleton
-public class DefaultFSAttributeStorage
-    implements AttributeStorage, EventListener, Initializable, Disposable
+public class DefaultFSAttributeStorage extends AbstractFSAttributeStorage
 {
-    private Logger logger = LoggerFactory.getLogger( DefaultFSAttributeStorage.class );
-
-    final private ApplicationEventMulticaster applicationEventMulticaster;
-
-    final private ApplicationConfiguration applicationConfiguration;
 
     /** The xstream. */
     private final XStream xstream;
-
-    /**
-     * The base dir.
-     */
-    private volatile File workingDirectory;
 
     /**
      * Instantiates a new FSX stream attribute storage.
@@ -91,10 +81,7 @@ public class DefaultFSAttributeStorage
     @Inject
     public DefaultFSAttributeStorage( final ApplicationEventMulticaster applicationEventMulticaster, final ApplicationConfiguration applicationConfiguration)
     {
-        super();
-
-        this.applicationConfiguration = applicationConfiguration;
-        this.applicationEventMulticaster = applicationEventMulticaster;
+        super( applicationEventMulticaster, applicationConfiguration);
 
         this.xstream = new XStream();
         this.xstream.alias( "file", DefaultStorageFileItem.class );
@@ -103,259 +90,12 @@ public class DefaultFSAttributeStorage
         this.xstream.alias( "link", DefaultStorageLinkItem.class );
     }
 
-    protected Logger getLogger()
+
+
+    protected void doPutAttribute( StorageItem item, OutputStream outputStream ) throws IOException
     {
-        return logger;
-    }
-
-    public void initialize()
-    {
-        applicationEventMulticaster.addEventListener( this );
-
-        initializeWorkingDirectory();
-    }
-
-    public void dispose()
-    {
-        applicationEventMulticaster.removeEventListener( this );
-    }
-
-    public void onEvent( final Event<?> evt )
-    {
-        if ( ConfigurationChangeEvent.class.isAssignableFrom( evt.getClass() ) )
-        {
-            initializeWorkingDirectory();
-        }
-    }
-
-    /**
-     * Gets the base dir.
-     * 
-     * @return the base dir
-     */
-    public File getWorkingDirectory()
-        throws IOException
-    {
-        return workingDirectory;
-    }
-
-    public synchronized File initializeWorkingDirectory()
-    {
-        if ( workingDirectory == null )
-        {
-            workingDirectory = applicationConfiguration.getWorkingDirectory( "proxy/attributes" );
-
-            if ( workingDirectory.exists() )
-            {
-                if ( !workingDirectory.isDirectory() )
-                {
-                    throw new IllegalArgumentException( "The attribute storage exists and is not a directory: "
-                        + workingDirectory.getAbsolutePath() );
-                }
-            }
-            else
-            {
-                getLogger().info( "Attribute storage directory does not exists, creating it here: " + workingDirectory );
-
-                if ( !workingDirectory.mkdirs() )
-                {
-                    if ( !workingDirectory.isDirectory() )
-                    {
-                        throw new IllegalArgumentException( "Could not create the attribute storage directory on path "
-                            + workingDirectory.getAbsolutePath() );
-                    }
-                }
-            }
-        }
-
-        return workingDirectory;
-    }
-
-    public synchronized void setWorkingDirectory( final File baseDir )
-    {
-        this.workingDirectory = baseDir;
-    }
-
-    protected boolean IsMetadataMaintained( final RepositoryItemUid uid )
-    {
-        Boolean isMetadataMaintained = uid.getAttributeValue( IsMetadataMaintainedAttribute.class );
-
-        if ( isMetadataMaintained != null )
-        {
-            return isMetadataMaintained.booleanValue();
-        }
-        else
-        {
-            // safest
-            return true;
-        }
-    }
-
-    public boolean deleteAttributes( final RepositoryItemUid uid )
-    {
-        if ( !IsMetadataMaintained( uid ) )
-        {
-            // do nothing
-            return false;
-        }
-
-        final RepositoryItemUidLock uidLock = uid.getAttributeLock();
-
-        uidLock.lock( Action.delete );
-
-        try
-        {
-            if ( getLogger().isDebugEnabled() )
-            {
-                getLogger().debug( "Deleting attributes on UID=" + uid.toString() );
-            }
-
-            boolean result = false;
-
-            try
-            {
-                File ftarget = getFileFromBase( uid );
-
-                result = ftarget.exists() && ftarget.isFile() && ftarget.delete();
-            }
-            catch ( IOException e )
-            {
-                getLogger().warn( "Got IOException during delete of UID=" + uid.toString(), e );
-            }
-
-            return result;
-        }
-        finally
-        {
-            uidLock.unlock();
-        }
-    }
-
-    public AbstractStorageItem getAttributes( final RepositoryItemUid uid )
-    {
-        if ( !IsMetadataMaintained( uid ) )
-        {
-            // do nothing
-            return null;
-        }
-
-        final RepositoryItemUidLock uidLock = uid.getAttributeLock();
-
-        uidLock.lock( Action.read );
-
-        try
-        {
-            if ( getLogger().isDebugEnabled() )
-            {
-                getLogger().debug( "Loading attributes on UID=" + uid.toString() );
-            }
-            
-            try
-            {
-                AbstractStorageItem result = null;
-
-                result = doGetAttributes( uid );
-
-                return result;
-            }
-            catch ( IOException ex )
-            {
-                getLogger().error( "Got IOException during reading of UID=" + uid.toString(), ex );
-
-                return null;
-            }
-        }
-        finally
-        {
-            uidLock.unlock();
-        }
-    }
-
-    public void putAttribute( StorageItem item )
-    {
-        if ( !IsMetadataMaintained( item.getRepositoryItemUid() ) )
-        {
-            // do nothing
-            return;
-        }
-
-        final RepositoryItemUid origUid = item.getRepositoryItemUid();
-
-        final RepositoryItemUidLock uidLock = origUid.getAttributeLock();
-
-        uidLock.lock( Action.create );
-
-        try
-        {
-            if ( StorageCollectionItem.class.isAssignableFrom( item.getClass() ) )
-            {
-                // not saving attributes for directories anymore
-                return;
-            }
-
-            if ( getLogger().isDebugEnabled() )
-            {
-                getLogger().debug( "Storing attributes on UID=" + item.getRepositoryItemUid() );
-            }
-
-            try
-            {
-                AbstractStorageItem onDisk = doGetAttributes( item.getRepositoryItemUid() );
-
-                if ( onDisk != null && ( onDisk.getGeneration() > item.getGeneration() ) )
-                {
-                    // change detected, overlay the to be saved onto the newer one and swap
-                    onDisk.setResourceStoreRequest( item.getResourceStoreRequest() );
-
-                    onDisk.overlay( item );
-
-                    // and overlay other things too
-                    onDisk.setRepositoryItemUid( item.getRepositoryItemUid() );
-                    onDisk.setReadable( item.isReadable() );
-                    onDisk.setWritable( item.isWritable() );
-
-                    item = onDisk;
-                }
-
-                File target = getFileFromBase( item.getRepositoryItemUid() );
-
-                target.getParentFile().mkdirs();
-
-                if ( target.getParentFile().exists() && target.getParentFile().isDirectory() )
-                {
-                    FileOutputStream fos = null;
-
-                    try
-                    {
-                        fos = new FileOutputStream( target );
-
-                        item.incrementGeneration();
-
-                        xstream.toXML( item, fos );
-
-                        fos.flush();
-                    }
-                    finally
-                    {
-                        IOUtil.close( fos );
-                    }
-                }
-                else
-                {
-                    getLogger().error(
-                        "Could not store attributes on UID=" + item.getRepositoryItemUid()
-                            + ", parent exists but is not a directory!" );
-                }
-            }
-            catch ( IOException ex )
-            {
-                getLogger().error( "Got IOException during store of UID=" + item.getRepositoryItemUid(), ex );
-            }
-        }
-        finally
-        {
-            uidLock.unlock();
-        }
+        xstream.toXML( item, outputStream );
+        outputStream.flush();
     }
 
     // ==
@@ -456,36 +196,5 @@ public class DefaultFSAttributeStorage
         return result;
     }
 
-    /**
-     * Gets the file from base.
-     * 
-     * @param uid the uid
-     * @return the file from base
-     */
-    protected File getFileFromBase( final RepositoryItemUid uid )
-        throws IOException
-    {
-        final File repoBase = new File( getWorkingDirectory(), uid.getRepository().getId() );
 
-        File result = null;
-
-        String path = FilenameUtils.getPath( uid.getPath() );
-
-        String name = FilenameUtils.getName( uid.getPath() );
-
-        result = new File( repoBase, path + "/" + name );
-
-        // to be foolproof
-        // 2007.11.09. - Believe or not, Nexus deleted my whole USB rack! (cstamas)
-        // ok, now you may laugh :)
-        if ( !result.getAbsolutePath().startsWith( getWorkingDirectory().getAbsolutePath() ) )
-        {
-            throw new IOException( "FileFromBase evaluated directory wrongly! baseDir="
-                + getWorkingDirectory().getAbsolutePath() + ", target=" + result.getAbsolutePath() );
-        }
-        else
-        {
-            return result;
-        }
-    }
 }
