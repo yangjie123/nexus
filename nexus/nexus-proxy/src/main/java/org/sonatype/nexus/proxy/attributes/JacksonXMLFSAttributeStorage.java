@@ -71,7 +71,7 @@ public class JacksonXMLFSAttributeStorage
         objectMapper.disable( SerializationConfig.Feature.AUTO_DETECT_GETTERS );
         objectMapper.disable( SerializationConfig.Feature.AUTO_DETECT_IS_GETTERS );
 
-        objectMapper.writerWithDefaultPrettyPrinter();
+//        objectMapper.writerWithDefaultPrettyPrinter();
     }
 
     @Override

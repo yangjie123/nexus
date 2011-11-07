@@ -28,32 +28,23 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.MethodRule;
 import org.junit.runner.RunWith;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
-import org.sonatype.nexus.configuration.application.ApplicationConfiguration;
 import org.sonatype.nexus.proxy.ResourceStoreRequest;
 import org.sonatype.nexus.proxy.attributes.AttributeStorage;
-import org.sonatype.nexus.proxy.attributes.DefaultFSAttributeStorage;
+import org.sonatype.nexus.proxy.attributes.perf.internal.MockRepository;
+import org.sonatype.nexus.proxy.attributes.perf.internal.OrderedRunner;
+import org.sonatype.nexus.proxy.attributes.perf.internal.TestRepositoryItemUid;
 import org.sonatype.nexus.proxy.item.AbstractStorageItem;
 import org.sonatype.nexus.proxy.item.ContentLocator;
-import org.sonatype.nexus.proxy.item.DefaultRepositoryItemUid;
 import org.sonatype.nexus.proxy.item.DefaultStorageFileItem;
 import org.sonatype.nexus.proxy.item.DummyRepositoryItemUidFactory;
 import org.sonatype.nexus.proxy.item.RepositoryItemUid;
-import org.sonatype.nexus.proxy.item.RepositoryItemUidFactory;
 import org.sonatype.nexus.proxy.item.StorageFileItem;
-import org.sonatype.nexus.proxy.item.StorageItem;
 import org.sonatype.nexus.proxy.item.StringContentLocator;
-import org.sonatype.nexus.proxy.item.uid.Attribute;
-import org.sonatype.nexus.proxy.item.uid.IsMetadataMaintainedAttribute;
 import org.sonatype.nexus.proxy.repository.Repository;
 import org.sonatype.nexus.proxy.storage.local.fs.FileContentLocator;
-import org.sonatype.plexus.appevents.ApplicationEventMulticaster;
 
 import java.io.File;
 import java.io.IOException;
-
-import static org.mockito.Mockito.*;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -67,11 +58,10 @@ import static org.hamcrest.Matchers.*;
 @RunWith( OrderedRunner.class )
 public abstract class AttributeStoragePerformanceTestSupport
 {
-    // adding the following cause the Answer stub below to fail
 //    @Rule
 //    public MethodRule benchmarkRun = new BenchmarkRule();
 
-    private Repository repository = mock( Repository.class );
+    private Repository repository;
 
     private AttributeStorage attributeStorage;
 
@@ -83,24 +73,13 @@ public abstract class AttributeStoragePerformanceTestSupport
 
     final private String SHA1_ATTRIBUTE_VALUE = "100f4ae295695335ef5d3346b42ed81ecd063fc9";
 
-    final private static int ITERATION_COUNT = 10000;
+    final private static int ITERATION_COUNT = 100;
 
     @Before
     public void setupRepositoryMock()
     {
-        when( repository.getId() ).thenReturn( "mock-repo" );
-        when( repository.createUid( anyString() ) ).thenAnswer(new Answer<RepositoryItemUid>()
-        {
-             public RepositoryItemUid answer(InvocationOnMock invocation)
-             {
-                 Object[] args = invocation.getArguments();
-
-                 String path = (String) args[0];
-                 Repository mock = (Repository) invocation.getMock();
-
-                 return new TestRepositoryItemUid(repositoryItemUidFactory, mock, path);
-             }
-        });
+        // Do NOT us a mockito mock, using answers does not play well with junitbenchmark
+        repository = new MockRepository( "mock-repo", repositoryItemUidFactory );
     }
 
     @Before
@@ -121,7 +100,7 @@ public abstract class AttributeStoragePerformanceTestSupport
     // Test writes
     //////////////
     @Test
-    public void test0PrimePutAttribute()
+    public void test0PrimePutAndGettAttribute()
     {
         writeEntryToAttributeStorage( "/prime.txt" );
         getStorageItemFromAttributeStore( "/prime.txt" );
@@ -210,25 +189,4 @@ public abstract class AttributeStoragePerformanceTestSupport
         }
     }
 
-
-    class TestRepositoryItemUid extends DefaultRepositoryItemUid
-    {
-        TestRepositoryItemUid( RepositoryItemUidFactory factory, Repository repository, String path )
-        {
-            super( factory, repository, path );
-        }
-
-        @Override
-         public <A extends Attribute<V>, V> V getAttributeValue( Class<A> attrClass )
-         {
-             if( IsMetadataMaintainedAttribute.class.getName().equals( attrClass.getName() ) )
-             {
-                 return (V) Boolean.TRUE;
-             }
-             else
-             {
-                return super.getAttributeValue( attrClass );
-             }
-         }
-    }
 }

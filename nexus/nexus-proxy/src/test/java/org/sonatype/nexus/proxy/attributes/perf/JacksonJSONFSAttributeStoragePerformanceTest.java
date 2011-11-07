@@ -18,8 +18,12 @@
  */
 package org.sonatype.nexus.proxy.attributes.perf;
 
+import com.carrotsearch.junitbenchmarks.annotation.AxisRange;
+import com.carrotsearch.junitbenchmarks.annotation.BenchmarkHistoryChart;
+import com.carrotsearch.junitbenchmarks.annotation.BenchmarkMethodChart;
 import org.sonatype.nexus.configuration.application.ApplicationConfiguration;
 import org.sonatype.nexus.proxy.attributes.AttributeStorage;
+import org.sonatype.nexus.proxy.attributes.JacksonJSONFSAttributeStorage;
 import org.sonatype.nexus.proxy.attributes.JacksonXMLFSAttributeStorage;
 import org.sonatype.plexus.appevents.ApplicationEventMulticaster;
 
@@ -32,6 +36,9 @@ import static org.mockito.Mockito.when;
 /**
  * Performance test for DefaultFSAttributeStorage
  */
+//@BenchmarkHistoryChart()
+//@BenchmarkMethodChart()
+//@AxisRange(min = 0)
 public class JacksonJSONFSAttributeStoragePerformanceTest
     extends AttributeStoragePerformanceTestSupport
 {
@@ -41,8 +48,8 @@ public class JacksonJSONFSAttributeStoragePerformanceTest
         ApplicationConfiguration applicationConfiguration = mock( ApplicationConfiguration.class );
         when( applicationConfiguration.getWorkingDirectory( eq("proxy/attributes")) ).thenReturn( new File( "target/"+ this.getClass().getSimpleName() +"/attributes" ) );
 
-        JacksonXMLFSAttributeStorage
-            attributeStorage =  new JacksonXMLFSAttributeStorage( applicationEventMulticaster, applicationConfiguration );
+        JacksonJSONFSAttributeStorage
+            attributeStorage =  new JacksonJSONFSAttributeStorage( applicationEventMulticaster, applicationConfiguration );
         attributeStorage.initializeWorkingDirectory();
         return attributeStorage;
     }

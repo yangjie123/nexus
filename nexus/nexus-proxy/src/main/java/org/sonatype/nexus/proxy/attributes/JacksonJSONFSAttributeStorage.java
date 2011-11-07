@@ -44,21 +44,12 @@ import java.io.OutputStream;
 public class JacksonJSONFSAttributeStorage
     extends AbstractFSAttributeStorage
 {
-    private final ObjectMapper objectMapper = new XmlMapper();
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public JacksonJSONFSAttributeStorage( ApplicationEventMulticaster applicationEventMulticaster,
                                           ApplicationConfiguration applicationConfiguration )
     {
         super( applicationEventMulticaster, applicationConfiguration );
-
-
-//        objectMapper.enableDefaultTyping(); // defaults for defaults (see below); include as wrapper-array, non-concrete types
-//        objectMapper.enableDefaultTyping( ObjectMapper.DefaultTyping.NON_FINAL, JsonTypeInfo.As.WRAPPER_OBJECT ); // all non-final types
-//        AnnotationIntrospector introspector = new JaxbAnnotationIntrospector();
-//        // make deserializer use JAXB annotations (only)
-//        objectMapper.getDeserializationConfig().withAnnotationIntrospector(introspector);
-//        // make serializer use JAXB annotations (only)
-//        objectMapper.getSerializationConfig().withAnnotationIntrospector(introspector);
 
         objectMapper.setVisibility( JsonMethod.FIELD, JsonAutoDetect.Visibility.ANY) // auto-detect all member fields
         .setVisibility(JsonMethod.GETTER, JsonAutoDetect.Visibility.NONE) // but only public getters

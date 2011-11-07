@@ -18,6 +18,9 @@
  */
 package org.sonatype.nexus.proxy.attributes.perf;
 
+import com.carrotsearch.junitbenchmarks.annotation.AxisRange;
+import com.carrotsearch.junitbenchmarks.annotation.BenchmarkHistoryChart;
+import com.carrotsearch.junitbenchmarks.annotation.BenchmarkMethodChart;
 import org.sonatype.nexus.configuration.application.ApplicationConfiguration;
 import org.sonatype.nexus.proxy.attributes.AttributeStorage;
 import org.sonatype.nexus.proxy.attributes.DefaultFSAttributeStorage;
@@ -32,6 +35,9 @@ import static org.mockito.Mockito.when;
 /**
  * Performance test for DefaultFSAttributeStorage
  */
+//@BenchmarkHistoryChart()
+//@BenchmarkMethodChart()
+//@AxisRange(min = 0)
 public class DefaultFSAttributeStoragePerformanceTest extends AttributeStoragePerformanceTestSupport
 {
     public AttributeStorage getAttributeStorage()
