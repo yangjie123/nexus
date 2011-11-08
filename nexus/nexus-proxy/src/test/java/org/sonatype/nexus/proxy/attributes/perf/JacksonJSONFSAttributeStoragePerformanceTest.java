@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) 2008-2011 Sonatype, Inc.
  * All rights reserved. Includes the third-party code listed at http://links.sonatype.com/products/nexus/oss/attributions
  *
