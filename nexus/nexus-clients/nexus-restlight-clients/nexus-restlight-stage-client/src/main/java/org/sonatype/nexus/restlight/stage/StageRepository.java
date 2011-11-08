@@ -42,6 +42,8 @@ public class StageRepository
 
     private String user;
 
+    private String token;
+
     private String ipAddress;
 
     private String userAgent;
@@ -131,6 +133,17 @@ public class StageRepository
     public StageRepository setDescription( final String description )
     {
         this.description = description;
+        return this;
+    }
+
+    public String getToken()
+    {
+        return token;
+    }
+
+    public StageRepository setToken( final String token )
+    {
+        this.token = token;
         return this;
     }
 

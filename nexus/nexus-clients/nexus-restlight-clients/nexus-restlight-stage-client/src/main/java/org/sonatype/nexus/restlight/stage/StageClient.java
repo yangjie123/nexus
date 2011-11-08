@@ -70,6 +70,8 @@ public class StageClient
 
     private static final String REPO_DESCRIPTION_ELEMENT = "description";
 
+    private static final String REPO_TOKEN_ELEMENT = "token";
+
     private static final String REPO_IP_ADDRESS_ELEMENT = "ipAddress";
 
     private static final String REPO_USER_AGENT_ELEMENT = "userAgent";
@@ -517,6 +519,12 @@ public class StageClient
                 if ( desc != null )
                 {
                     repo.setDescription( desc.getText() );
+                }
+
+                Element token = detail.getChild( REPO_TOKEN_ELEMENT );
+                if ( token != null )
+                {
+                    repo.setToken( token.getText() );
                 }
 
                 Element ipAddress = detail.getChild( REPO_IP_ADDRESS_ELEMENT );

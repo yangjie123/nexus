@@ -41,6 +41,13 @@ public abstract class AbstractStagingMojo
      */
     private String repositoryId;
 
+    /**
+     * Optional staging token to be used to filter staging repositories.
+     *
+     * @parameter expression="${nexus.token}"
+     */
+    private String stagingToken;
+
     private StageClient client;
 
     public AbstractStagingMojo()
@@ -176,6 +183,8 @@ public abstract class AbstractStagingMojo
             throw new MojoExecutionException( "No repositories available." );
         }
 
+        stageRepositories = filterByStagingTokenIfPresent( stageRepositories );
+
         if ( getRepositoryId() != null )
         {
             for ( StageRepository repo : stageRepositories )
@@ -239,6 +248,33 @@ public abstract class AbstractStagingMojo
         }
     }
 
+    /**
+     * Filters out all repositories that does not match the specified staging token.
+     *
+     * @param repositories to be filtered
+     * @return filtered
+     */
+    private List<StageRepository> filterByStagingTokenIfPresent( final List<StageRepository> repositories )
+    {
+        final List<StageRepository> filtered = new ArrayList<StageRepository>();
+
+        if ( getStagingToken() != null )
+        {
+            for ( final StageRepository repository : repositories )
+            {
+                if ( getStagingToken().equals( repository.getToken() ) )
+                {
+                    filtered.add( repository );
+                }
+            }
+            return filtered;
+        }
+        else
+        {
+            return repositories;
+        }
+    }
+
     public String getRepositoryId()
     {
         return repositoryId;
@@ -249,4 +285,13 @@ public abstract class AbstractStagingMojo
         this.repositoryId = repositoryId;
     }
 
+    public String getStagingToken()
+    {
+        return stagingToken;
+    }
+
+    public void setStagingToken( final String stagingToken )
+    {
+        this.stagingToken = stagingToken;
+    }
 }
