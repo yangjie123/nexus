@@ -29,8 +29,9 @@ import java.util.List;
 import org.apache.commons.io.IOUtils;
 import org.codehaus.plexus.component.annotations.Component;
 import org.codehaus.plexus.component.annotations.Requirement;
-import org.codehaus.plexus.logging.Logger;
 import org.codehaus.plexus.util.IOUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.sonatype.nexus.configuration.application.ApplicationConfiguration;
 import org.sonatype.nexus.proxy.ItemNotFoundException;
 import org.sonatype.nexus.proxy.LocalStorageException;
@@ -44,41 +45,52 @@ import org.sonatype.nexus.proxy.item.StorageItem;
 import org.sonatype.nexus.proxy.repository.Repository;
 import org.sonatype.nexus.proxy.storage.local.fs.FileContentLocator;
 
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.inject.Singleton;
+
 /**
  * The Class DefaultAttributesHandler.
  * 
  * @author cstamas
  */
-@Component( role = AttributesHandler.class )
+@Named
+@Singleton
 public class DefaultAttributesHandler
     implements AttributesHandler
 {
-    @Requirement
-    private Logger logger;
+    private Logger logger = LoggerFactory.getLogger( DefaultAttributesHandler.class );
 
     /**
      * The application configuration.
      */
-    @Requirement
     private ApplicationConfiguration applicationConfiguration;
 
     /**
      * The attribute storage.
      */
-    @Requirement
     private AttributeStorage attributeStorage;
 
     /**
      * The item inspector list.
      */
-    @Requirement( role = StorageItemInspector.class )
     protected List<StorageItemInspector> itemInspectorList;
 
     /**
      * The item inspector list.
      */
-    @Requirement( role = StorageFileItemInspector.class )
     protected List<StorageFileItemInspector> fileItemInspectorList;
+
+    @Inject
+    public DefaultAttributesHandler( ApplicationConfiguration applicationConfiguration,
+                                     AttributeStorage attributeStorage, List<StorageItemInspector> itemInspectorList,
+                                     List<StorageFileItemInspector> fileItemInspectorList )
+    {
+        this.applicationConfiguration = applicationConfiguration;
+        this.attributeStorage = attributeStorage;
+        this.itemInspectorList = itemInspectorList;
+        this.fileItemInspectorList = fileItemInspectorList;
+    }
 
     // ==
 

@@ -18,9 +18,12 @@
  */
 package org.sonatype.nexus.proxy.attributes.perf;
 
+import com.carrotsearch.junitbenchmarks.BenchmarkRule;
 import com.carrotsearch.junitbenchmarks.annotation.AxisRange;
 import com.carrotsearch.junitbenchmarks.annotation.BenchmarkHistoryChart;
 import com.carrotsearch.junitbenchmarks.annotation.BenchmarkMethodChart;
+import org.junit.Rule;
+import org.junit.rules.MethodRule;
 import org.sonatype.nexus.configuration.application.ApplicationConfiguration;
 import org.sonatype.nexus.proxy.attributes.AttributeStorage;
 import org.sonatype.nexus.proxy.attributes.JacksonJSONFSAttributeStorage;
@@ -42,6 +45,10 @@ import static org.mockito.Mockito.when;
 public class JacksonJSONFSAttributeStoragePerformanceTest
     extends AttributeStoragePerformanceTestSupport
 {
+
+//    @Rule
+//    public MethodRule benchmarkRun = new BenchmarkRule();
+    
     public AttributeStorage getAttributeStorage()
     {
         ApplicationEventMulticaster applicationEventMulticaster = mock( ApplicationEventMulticaster.class );

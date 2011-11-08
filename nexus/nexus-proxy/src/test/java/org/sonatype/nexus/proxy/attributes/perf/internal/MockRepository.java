@@ -57,9 +57,13 @@ import java.util.Map;
  */
 public class MockRepository implements Repository
 {
-    private final String id;
+    private String id;
 
-    private final RepositoryItemUidFactory repositoryItemUidFactory;
+    private String localUrl;
+
+    private RepositoryItemUidFactory repositoryItemUidFactory;
+
+    private AttributesHandler attributesHandler;
 
     public MockRepository( String id, RepositoryItemUidFactory repositoryItemUidFactory )
     {
@@ -74,11 +78,42 @@ public class MockRepository implements Repository
     }
 
     @Override
+    public void setId( String id )
+    {
+        this.id = id;
+    }
+
+
+    @Override
     public RepositoryItemUid createUid( String path )
     {
         return new TestRepositoryItemUid(repositoryItemUidFactory, this, path);
     }
-    
+
+    @Override
+    public String getLocalUrl()
+    {
+        return localUrl;
+    }
+
+    @Override
+    public void setLocalUrl( String url )
+        throws StorageException
+    {
+        this.localUrl = url;
+    }
+
+    @Override
+    public AttributesHandler getAttributesHandler()
+    {
+        return attributesHandler;
+    }
+
+    @Override
+    public void setAttributesHandler( AttributesHandler attributesHandler )
+    {
+        this.attributesHandler = attributesHandler;
+    }
 
     @Override
     public String getProviderRole()
@@ -92,11 +127,6 @@ public class MockRepository implements Repository
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
-    @Override
-    public void setId( String id )
-    {
-        //To change body of implemented methods use File | Settings | File Templates.
-    }
 
     @Override
     public CoreConfiguration getCurrentCoreConfiguration()
@@ -329,30 +359,9 @@ public class MockRepository implements Repository
         //To change body of implemented methods use File | Settings | File Templates.
     }
 
-    @Override
-    public AttributesHandler getAttributesHandler()
-    {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
 
-    @Override
-    public void setAttributesHandler( AttributesHandler attributesHandler )
-    {
-        //To change body of implemented methods use File | Settings | File Templates.
-    }
 
-    @Override
-    public String getLocalUrl()
-    {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
 
-    @Override
-    public void setLocalUrl( String url )
-        throws StorageException
-    {
-        //To change body of implemented methods use File | Settings | File Templates.
-    }
 
     @Override
     public LocalStatus getLocalStatus()

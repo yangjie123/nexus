@@ -18,18 +18,30 @@
  */
 package org.sonatype.nexus.proxy.attributes.perf;
 
+import com.carrotsearch.junitbenchmarks.BenchmarkOptions;
 import com.carrotsearch.junitbenchmarks.BenchmarkRule;
 import com.carrotsearch.junitbenchmarks.annotation.AxisRange;
 import com.carrotsearch.junitbenchmarks.annotation.BenchmarkHistoryChart;
 import com.carrotsearch.junitbenchmarks.annotation.BenchmarkMethodChart;
+import com.google.common.collect.Maps;
 import org.apache.commons.io.FileUtils;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.MethodRule;
 import org.junit.runner.RunWith;
+import org.sonatype.nexus.configuration.application.ApplicationConfiguration;
+import org.sonatype.nexus.mime.MimeUtil;
+import org.sonatype.nexus.proxy.ItemNotFoundException;
+import org.sonatype.nexus.proxy.LocalStorageException;
 import org.sonatype.nexus.proxy.ResourceStoreRequest;
+import org.sonatype.nexus.proxy.access.AccessManager;
 import org.sonatype.nexus.proxy.attributes.AttributeStorage;
+import org.sonatype.nexus.proxy.attributes.DefaultAttributesHandler;
+import org.sonatype.nexus.proxy.attributes.StorageFileItemInspector;
+import org.sonatype.nexus.proxy.attributes.StorageItemInspector;
 import org.sonatype.nexus.proxy.attributes.perf.internal.MockRepository;
 import org.sonatype.nexus.proxy.attributes.perf.internal.OrderedRunner;
 import org.sonatype.nexus.proxy.attributes.perf.internal.TestRepositoryItemUid;
@@ -37,17 +49,27 @@ import org.sonatype.nexus.proxy.item.AbstractStorageItem;
 import org.sonatype.nexus.proxy.item.ContentLocator;
 import org.sonatype.nexus.proxy.item.DefaultStorageFileItem;
 import org.sonatype.nexus.proxy.item.DummyRepositoryItemUidFactory;
+import org.sonatype.nexus.proxy.item.LinkPersister;
 import org.sonatype.nexus.proxy.item.RepositoryItemUid;
 import org.sonatype.nexus.proxy.item.StorageFileItem;
 import org.sonatype.nexus.proxy.item.StringContentLocator;
 import org.sonatype.nexus.proxy.repository.Repository;
+import org.sonatype.nexus.proxy.storage.local.fs.DefaultFSLocalRepositoryStorage;
+import org.sonatype.nexus.proxy.storage.local.fs.DefaultFSPeer;
 import org.sonatype.nexus.proxy.storage.local.fs.FileContentLocator;
+import org.sonatype.nexus.proxy.wastebasket.Wastebasket;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * The performance tests for specific implementations of AttributesStorage.
@@ -58,12 +80,21 @@ import static org.hamcrest.Matchers.*;
 @RunWith( OrderedRunner.class )
 public abstract class AttributeStoragePerformanceTestSupport
 {
-//    @Rule
-//    public MethodRule benchmarkRun = new BenchmarkRule();
+
+    @Rule
+    public MethodRule benchmarkRun = new BenchmarkRule();
 
     private Repository repository;
 
     private AttributeStorage attributeStorage;
+
+    private ApplicationConfiguration applicationConfiguration;
+
+    final private String testFilePath = "content/file.txt";
+
+    private DefaultFSLocalRepositoryStorage localRepositoryStorageUnderTest;
+
+    private long originalLastAccessTime;
 
     final private DummyRepositoryItemUidFactory repositoryItemUidFactory = new DummyRepositoryItemUidFactory();
 
@@ -76,24 +107,49 @@ public abstract class AttributeStoragePerformanceTestSupport
     final private static int ITERATION_COUNT = 100;
 
     @Before
-    public void setupRepositoryMock()
+    public void setup() throws Exception
     {
-        // Do NOT us a mockito mock, using answers does not play well with junitbenchmark
-        repository = new MockRepository( "mock-repo", repositoryItemUidFactory );
-    }
+        File repoStorageDir = new File( "target/"+ getClass().getSimpleName() + "/repo-storage/" );
+        String repoLocalURL = repoStorageDir.getAbsoluteFile().toURI().toString();
 
-    @Before
-    public void setupAttributeStorage()
-    {
-        this.attributeStorage = getAttributeStorage();
-    }
+        // write a test file
+        File testFile = new File( repoStorageDir, testFilePath );
+        FileUtils.writeStringToFile( testFile, "CONTENT" );
 
-    @Before
-    public void setupContentFile() throws IOException
-    {
         FileUtils.writeStringToFile( CONTENT_TEST_FILE, "CONTENT" );
-    }
 
+         // Mocks
+        Wastebasket wastebasket = mock( Wastebasket.class );
+        LinkPersister linkPersister = mock( LinkPersister.class );
+        MimeUtil mimeUtil = mock( MimeUtil.class );
+        Map<String, Long> repositoryContexts = Maps.newHashMap();
+
+        // Application Config
+        applicationConfiguration = mock( ApplicationConfiguration.class );
+        when( applicationConfiguration.getWorkingDirectory( eq("proxy/attributes")) ).thenReturn( new File( "target/"+ this.getClass().getSimpleName() +"/attributes" ) );
+
+        // remove any event inspectors from the timing
+        List<StorageItemInspector> itemInspectorList = new ArrayList<StorageItemInspector>();
+        List<StorageFileItemInspector> fileItemInspectorList = new ArrayList<StorageFileItemInspector>();
+
+        // set the AttributeStorage on the Attribute Handler
+        attributeStorage = getAttributeStorage();
+        DefaultAttributesHandler attributesHandler = new DefaultAttributesHandler(applicationConfiguration, attributeStorage, itemInspectorList, fileItemInspectorList );
+
+        // Need to use the MockRepository
+        // Do NOT us a mockito mock, using answers does not play well with junitbenchmark
+        repository = new MockRepository( "testRetieveItem-repo", new DummyRepositoryItemUidFactory() );
+        repository.setLocalUrl( repoLocalURL );
+        repository.setAttributesHandler( attributesHandler );
+
+        // setup the class under test
+        localRepositoryStorageUnderTest = new DefaultFSLocalRepositoryStorage( wastebasket, linkPersister, mimeUtil, repositoryContexts, new DefaultFSPeer() );
+
+        // prime the retrieve
+        ResourceStoreRequest resourceRequest = new ResourceStoreRequest( testFilePath );
+        originalLastAccessTime = localRepositoryStorageUnderTest.retrieveItem( repository, resourceRequest ).getLastRequested();
+    }
+    
     public abstract AttributeStorage getAttributeStorage();
 
     //////////////
@@ -137,19 +193,46 @@ public abstract class AttributeStoragePerformanceTestSupport
         }
     }
 
-    @Test
+//    @Test
     public void test5DeleteAttributes()
     {
         deleteStorageItemFromAttributeStore( "/a.txt" );
     }
 
-    @Test
+//    @Test
     public void test6DeleteAttributesX100()
     {
         for( int ii=0; ii< ITERATION_COUNT; ii++)
         {
             deleteStorageItemFromAttributeStore( "/"+ii+".txt" );
         }
+    }
+
+    @BenchmarkOptions(benchmarkRounds = 1000, warmupRounds = 1 )
+    @Test
+    public void testRetieveItemWithLastAccessUpdate()
+        throws LocalStorageException, ItemNotFoundException
+    {
+        ResourceStoreRequest resourceRequest = new ResourceStoreRequest( testFilePath );
+        resourceRequest.getRequestContext().put( AccessManager.REQUEST_REMOTE_ADDRESS, "127.0.0.1" );
+
+        AbstractStorageItem storageItem = localRepositoryStorageUnderTest.retrieveItem( repository, resourceRequest );
+
+        MatcherAssert.assertThat( storageItem, Matchers.notNullValue() );
+        MatcherAssert.assertThat( storageItem.getLastRequested(), Matchers.greaterThan( originalLastAccessTime ) );
+    }
+
+    @BenchmarkOptions(benchmarkRounds = 1000, warmupRounds = 1)
+    @Test
+    public void testRetieveItemWithoutLastAccessUpdate()
+        throws LocalStorageException, ItemNotFoundException
+    {
+        ResourceStoreRequest resourceRequest = new ResourceStoreRequest( testFilePath );
+
+        AbstractStorageItem storageItem = localRepositoryStorageUnderTest.retrieveItem( repository, resourceRequest );
+
+        MatcherAssert.assertThat( storageItem, Matchers.notNullValue() );
+        MatcherAssert.assertThat( storageItem.getLastRequested(), Matchers.equalTo( originalLastAccessTime ) );
     }
 
     private void writeEntryToAttributeStorage( String path )
