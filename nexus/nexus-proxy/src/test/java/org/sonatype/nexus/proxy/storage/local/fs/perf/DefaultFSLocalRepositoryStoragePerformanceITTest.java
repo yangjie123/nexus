@@ -176,7 +176,7 @@ public class DefaultFSLocalRepositoryStoragePerformanceITTest
         MatcherAssert.assertThat( storageItem, Matchers.notNullValue() );
         MatcherAssert.assertThat( storageItem.getLastRequested(), Matchers.equalTo( originalLastAccessTime ) );
 
-        Mockito.verify( attributeStorageSpy, Mockito.only() ).getAttributes( Mockito.<RepositoryItemUid>any() );
+        Mockito.verify( attributeStorageSpy, Mockito.times( 1 ) ).getAttributes( Mockito.<RepositoryItemUid>any() );
     }
 
     @Test
@@ -194,8 +194,8 @@ public class DefaultFSLocalRepositoryStoragePerformanceITTest
         MatcherAssert.assertThat( storageItem, Matchers.notNullValue() );
         MatcherAssert.assertThat( storageItem.getLastRequested(), Matchers.greaterThan( originalLastAccessTime ) );
 
-        Mockito.verify( attributeStorageSpy, Mockito.only() ).putAttribute( Mockito.<StorageItem>any() );
-        Mockito.verify( attributeStorageSpy, Mockito.only() ).getAttributes( Mockito.<RepositoryItemUid>any() );
+        Mockito.verify( attributeStorageSpy, Mockito.times( 1 ) ).putAttribute( Mockito.<StorageItem>any() );
+        Mockito.verify( attributeStorageSpy, Mockito.times( 1 ) ).getAttributes( Mockito.<RepositoryItemUid>any() );
 
     }
 
