@@ -26,16 +26,19 @@ import com.carrotsearch.junitbenchmarks.annotation.BenchmarkHistoryChart;
 import com.carrotsearch.junitbenchmarks.annotation.BenchmarkMethodChart;
 import com.google.common.collect.Maps;
 import org.apache.commons.io.FileUtils;
-import org.hamcrest.Matcher;
+import org.codehaus.plexus.util.xml.Xpp3Dom;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.MethodRule;
-import org.mockito.Mockito;
 import org.sonatype.nexus.configuration.application.ApplicationConfiguration;
+import org.sonatype.nexus.configuration.model.CLocalStorage;
+import org.sonatype.nexus.configuration.model.CRepository;
+import org.sonatype.nexus.configuration.model.DefaultCRepository;
 import org.sonatype.nexus.mime.MimeUtil;
+import org.sonatype.nexus.proxy.AbstractNexusTestEnvironment;
 import org.sonatype.nexus.proxy.ItemNotFoundException;
 import org.sonatype.nexus.proxy.LocalStorageException;
 import org.sonatype.nexus.proxy.ResourceStoreRequest;
@@ -49,17 +52,20 @@ import org.sonatype.nexus.proxy.attributes.perf.internal.MockRepository;
 import org.sonatype.nexus.proxy.item.AbstractStorageItem;
 import org.sonatype.nexus.proxy.item.DummyRepositoryItemUidFactory;
 import org.sonatype.nexus.proxy.item.LinkPersister;
-import org.sonatype.nexus.proxy.item.uid.Attribute;
-import org.sonatype.nexus.proxy.item.uid.IsMetadataMaintainedAttribute;
+import org.sonatype.nexus.proxy.maven.ChecksumPolicy;
+import org.sonatype.nexus.proxy.maven.RepositoryPolicy;
+import org.sonatype.nexus.proxy.maven.maven2.M2Repository;
+import org.sonatype.nexus.proxy.maven.maven2.M2RepositoryConfiguration;
+import org.sonatype.nexus.proxy.registry.RepositoryRegistry;
 import org.sonatype.nexus.proxy.repository.Repository;
+import org.sonatype.nexus.proxy.storage.local.LocalRepositoryStorage;
 import org.sonatype.nexus.proxy.storage.local.fs.DefaultFSLocalRepositoryStorage;
 import org.sonatype.nexus.proxy.storage.local.fs.DefaultFSPeer;
-import org.sonatype.nexus.proxy.storage.local.fs.FSPeer;
 import org.sonatype.nexus.proxy.wastebasket.Wastebasket;
 import org.sonatype.plexus.appevents.ApplicationEventMulticaster;
 
 import java.io.File;
-import java.io.IOException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -74,16 +80,15 @@ import static org.mockito.Mockito.when;
 @BenchmarkHistoryChart()
 @BenchmarkMethodChart()
 @AxisRange(min = 0)
-public class DefaultFSLocalRepositoryStoragePerformanceTest
+public class DefaultFSLocalRepositoryStoragePerformanceITTest
+    extends AbstractNexusTestEnvironment
 {
     @Rule
     public MethodRule benchmarkRun = new BenchmarkRule();
     
-    private ApplicationConfiguration applicationConfiguration;
-
     final private String testFilePath = "content/file.txt";
 
-    private DefaultFSLocalRepositoryStorage localRepositoryStorageUnderTest;
+    private LocalRepositoryStorage localRepositoryStorageUnderTest;
 
     private Repository repository;
 
@@ -92,55 +97,55 @@ public class DefaultFSLocalRepositoryStoragePerformanceTest
     @Before
     public void setup() throws Exception
     {
-        File repoStorageDir = new File( "target/"+ getClass().getSimpleName() + "/repo-storage/" );
-        String repoLocalURL = repoStorageDir.getAbsoluteFile().toURI().toString();
+
+        ApplicationConfiguration applicationConfiguration = this.lookup( ApplicationConfiguration.class );
+
+
+        File repositoryStorageDir = applicationConfiguration.getWorkingDirectory( "proxy/store/test-repo" );
+
+        // adding one hosted
+        repository = this.lookup( Repository.class, "maven2" );
+
+        CRepository repoConf = new DefaultCRepository();
+
+        repoConf.setProviderRole( Repository.class.getName() );
+        repoConf.setProviderHint( "maven2" );
+        repoConf.setId( "test-repo" );
+
+        repoConf.setLocalStorage( new CLocalStorage() );
+        repoConf.getLocalStorage().setProvider( "file" );
+        repoConf.getLocalStorage().setUrl( repositoryStorageDir.toURI().toURL().toString() );
+
+        Xpp3Dom exRepo = new Xpp3Dom( "externalConfiguration" );
+        repoConf.setExternalConfiguration( exRepo );
+        M2RepositoryConfiguration exRepoConf = new M2RepositoryConfiguration( exRepo );
+        exRepoConf.setRepositoryPolicy( RepositoryPolicy.RELEASE );
+        exRepoConf.setChecksumPolicy( ChecksumPolicy.STRICT_IF_EXISTS );
+
+        repository.configure( repoConf );
+
+        applicationConfiguration.getConfigurationModel().addRepository( repoConf );
+
+        this.lookup( RepositoryRegistry.class ).addRepository( repository );
+
+        localRepositoryStorageUnderTest = repository.getLocalStorage();
+
+
 
         // write a test file
-        File testFile = new File( repoStorageDir, testFilePath );
+        File testFile = new File( repositoryStorageDir, testFilePath );
         FileUtils.writeStringToFile( testFile, "CONTENT" );
 
-         // Mocks
-        Wastebasket wastebasket = mock( Wastebasket.class );
-        LinkPersister linkPersister = mock( LinkPersister.class );
-        MimeUtil mimeUtil = mock( MimeUtil.class );
-        Map<String, Long> repositoryContexts = Maps.newHashMap();
 
-        // Application Config
-        applicationConfiguration = mock( ApplicationConfiguration.class );
-        when( applicationConfiguration.getWorkingDirectory( eq("proxy/attributes")) ).thenReturn( new File( "target/"+ this.getClass().getSimpleName() +"/attributes" ) );
-
-        // remove any event inspectors from the timing
-        List<StorageItemInspector> itemInspectorList = new ArrayList<StorageItemInspector>();
-        List<StorageFileItemInspector> fileItemInspectorList = new ArrayList<StorageFileItemInspector>();
-
-        // set the AttributeStorage on the Attribute Handler
-        DefaultAttributesHandler attributesHandler = new DefaultAttributesHandler(applicationConfiguration, getAttributeStorage(), itemInspectorList, fileItemInspectorList );
-
-        // Need to use the MockRepository
-        repository = new MockRepository( "testRetieveItem-repo", new DummyRepositoryItemUidFactory() );
-        repository.setLocalUrl( repoLocalURL );
-        repository.setAttributesHandler( attributesHandler );
-
-        // setup the class under test
-        localRepositoryStorageUnderTest = new DefaultFSLocalRepositoryStorage( wastebasket, linkPersister, mimeUtil, repositoryContexts, new DefaultFSPeer() );
 
         // prime the retrieve
         ResourceStoreRequest resourceRequest = new ResourceStoreRequest( testFilePath );
         originalLastAccessTime = localRepositoryStorageUnderTest.retrieveItem( repository, resourceRequest ).getLastRequested();
+
+
     }
 
-    private AttributeStorage getAttributeStorage()
-    {
-        // Mock out the events
-        ApplicationEventMulticaster applicationEventMulticaster = mock( ApplicationEventMulticaster.class );
-        
-        DefaultFSAttributeStorage attributeStorage =  new DefaultFSAttributeStorage( applicationEventMulticaster, applicationConfiguration );
-        attributeStorage.initializeWorkingDirectory();
-
-        return attributeStorage;
-    }
-
-    @BenchmarkOptions(benchmarkRounds = 1000, warmupRounds = 1 )
+    @BenchmarkOptions(benchmarkRounds = 25, warmupRounds = 1 )
     @Test
     public void testRetieveItemWithLastAccessUpdate()
         throws LocalStorageException, ItemNotFoundException
@@ -154,7 +159,7 @@ public class DefaultFSLocalRepositoryStoragePerformanceTest
         MatcherAssert.assertThat( storageItem.getLastRequested(), Matchers.greaterThan( originalLastAccessTime ) );
     }
 
-    @BenchmarkOptions(benchmarkRounds = 1000, warmupRounds = 1)
+    @BenchmarkOptions(benchmarkRounds = 25, warmupRounds = 1)
     @Test
     public void testRetieveItemWithoutLastAccessUpdate()
         throws LocalStorageException, ItemNotFoundException
