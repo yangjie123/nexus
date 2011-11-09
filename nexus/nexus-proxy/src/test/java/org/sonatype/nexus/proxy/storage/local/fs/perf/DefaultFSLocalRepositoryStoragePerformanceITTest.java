@@ -32,46 +32,31 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.MethodRule;
+import org.mockito.Mockito;
+import org.mockito.internal.verification.Only;
+import org.mockito.verification.VerificationMode;
 import org.sonatype.nexus.configuration.application.ApplicationConfiguration;
 import org.sonatype.nexus.configuration.model.CLocalStorage;
 import org.sonatype.nexus.configuration.model.CRepository;
 import org.sonatype.nexus.configuration.model.DefaultCRepository;
-import org.sonatype.nexus.mime.MimeUtil;
 import org.sonatype.nexus.proxy.AbstractNexusTestEnvironment;
 import org.sonatype.nexus.proxy.ItemNotFoundException;
 import org.sonatype.nexus.proxy.LocalStorageException;
 import org.sonatype.nexus.proxy.ResourceStoreRequest;
 import org.sonatype.nexus.proxy.access.AccessManager;
 import org.sonatype.nexus.proxy.attributes.AttributeStorage;
-import org.sonatype.nexus.proxy.attributes.DefaultAttributesHandler;
-import org.sonatype.nexus.proxy.attributes.DefaultFSAttributeStorage;
-import org.sonatype.nexus.proxy.attributes.StorageFileItemInspector;
-import org.sonatype.nexus.proxy.attributes.StorageItemInspector;
-import org.sonatype.nexus.proxy.attributes.perf.internal.MockRepository;
+import org.sonatype.nexus.proxy.attributes.HashMapAttributeStorage;
 import org.sonatype.nexus.proxy.item.AbstractStorageItem;
-import org.sonatype.nexus.proxy.item.DummyRepositoryItemUidFactory;
-import org.sonatype.nexus.proxy.item.LinkPersister;
+import org.sonatype.nexus.proxy.item.RepositoryItemUid;
+import org.sonatype.nexus.proxy.item.StorageItem;
 import org.sonatype.nexus.proxy.maven.ChecksumPolicy;
 import org.sonatype.nexus.proxy.maven.RepositoryPolicy;
-import org.sonatype.nexus.proxy.maven.maven2.M2Repository;
 import org.sonatype.nexus.proxy.maven.maven2.M2RepositoryConfiguration;
 import org.sonatype.nexus.proxy.registry.RepositoryRegistry;
 import org.sonatype.nexus.proxy.repository.Repository;
 import org.sonatype.nexus.proxy.storage.local.LocalRepositoryStorage;
-import org.sonatype.nexus.proxy.storage.local.fs.DefaultFSLocalRepositoryStorage;
-import org.sonatype.nexus.proxy.storage.local.fs.DefaultFSPeer;
-import org.sonatype.nexus.proxy.wastebasket.Wastebasket;
-import org.sonatype.plexus.appevents.ApplicationEventMulticaster;
 
 import java.io.File;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  *
@@ -92,6 +77,9 @@ public class DefaultFSLocalRepositoryStoragePerformanceITTest
     private Repository repository;
 
     private long originalLastAccessTime;
+
+//    private AttributeStorage attributeStorage = new HashMapAttributeStorage();
+    private AttributeStorage attributeStorage;
 
     @Before
     public void setup() throws Exception
@@ -129,6 +117,9 @@ public class DefaultFSLocalRepositoryStoragePerformanceITTest
 
         localRepositoryStorageUnderTest = repository.getLocalStorage();
 
+        attributeStorage = repository.getAttributesHandler().getAttributeStorage();
+
+//        repository.getAttributesHandler().setAttributeStorage( attributeStorage );
 
 
         // write a test file
@@ -141,10 +132,23 @@ public class DefaultFSLocalRepositoryStoragePerformanceITTest
         ResourceStoreRequest resourceRequest = new ResourceStoreRequest( testFilePath );
         originalLastAccessTime = localRepositoryStorageUnderTest.retrieveItem( repository, resourceRequest ).getLastRequested();
 
-
     }
 
-    @BenchmarkOptions(benchmarkRounds = 25, warmupRounds = 1 )
+
+    @BenchmarkOptions(benchmarkRounds = 1, warmupRounds = 0)
+    @Test
+    public void testRetieveItemWithoutLastAccessUpdate()
+        throws LocalStorageException, ItemNotFoundException
+    {
+        ResourceStoreRequest resourceRequest = new ResourceStoreRequest( testFilePath );
+
+        AbstractStorageItem storageItem = localRepositoryStorageUnderTest.retrieveItem( repository, resourceRequest );
+
+        MatcherAssert.assertThat( storageItem, Matchers.notNullValue() );
+        MatcherAssert.assertThat( storageItem.getLastRequested(), Matchers.equalTo( originalLastAccessTime ) );
+    }
+
+    @BenchmarkOptions(benchmarkRounds = 1, warmupRounds = 0 )
     @Test
     public void testRetieveItemWithLastAccessUpdate()
         throws LocalStorageException, ItemNotFoundException
@@ -158,16 +162,41 @@ public class DefaultFSLocalRepositoryStoragePerformanceITTest
         MatcherAssert.assertThat( storageItem.getLastRequested(), Matchers.greaterThan( originalLastAccessTime ) );
     }
 
-    @BenchmarkOptions(benchmarkRounds = 25, warmupRounds = 1)
     @Test
-    public void testRetieveItemWithoutLastAccessUpdate()
+    public void validateRetieveItemWithoutLastAccessUpdate()
         throws LocalStorageException, ItemNotFoundException
     {
+        AttributeStorage attributeStorageSpy = Mockito.spy( repository.getAttributesHandler().getAttributeStorage() );
+        repository.getAttributesHandler().setAttributeStorage( attributeStorageSpy );
+            
         ResourceStoreRequest resourceRequest = new ResourceStoreRequest( testFilePath );
 
         AbstractStorageItem storageItem = localRepositoryStorageUnderTest.retrieveItem( repository, resourceRequest );
 
         MatcherAssert.assertThat( storageItem, Matchers.notNullValue() );
         MatcherAssert.assertThat( storageItem.getLastRequested(), Matchers.equalTo( originalLastAccessTime ) );
+
+        Mockito.verify( attributeStorageSpy, Mockito.only() ).getAttributes( Mockito.<RepositoryItemUid>any() );
     }
+
+    @Test
+    public void validateRetieveItemWithLastAccessUpdate()
+        throws LocalStorageException, ItemNotFoundException
+    {
+        AttributeStorage attributeStorageSpy = Mockito.spy( repository.getAttributesHandler().getAttributeStorage() );
+        repository.getAttributesHandler().setAttributeStorage( attributeStorageSpy );
+
+        ResourceStoreRequest resourceRequest = new ResourceStoreRequest( testFilePath );
+        resourceRequest.getRequestContext().put( AccessManager.REQUEST_REMOTE_ADDRESS, "127.0.0.1" );
+
+        AbstractStorageItem storageItem = localRepositoryStorageUnderTest.retrieveItem( repository, resourceRequest );
+
+        MatcherAssert.assertThat( storageItem, Matchers.notNullValue() );
+        MatcherAssert.assertThat( storageItem.getLastRequested(), Matchers.greaterThan( originalLastAccessTime ) );
+
+        Mockito.verify( attributeStorageSpy, Mockito.only() ).putAttribute( Mockito.<StorageItem>any() );
+        Mockito.verify( attributeStorageSpy, Mockito.only() ).getAttributes( Mockito.<RepositoryItemUid>any() );
+
+    }
+
 }

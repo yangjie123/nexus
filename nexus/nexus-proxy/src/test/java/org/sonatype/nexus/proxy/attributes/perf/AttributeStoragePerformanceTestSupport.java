@@ -90,11 +90,11 @@ public abstract class AttributeStoragePerformanceTestSupport
 
     private ApplicationConfiguration applicationConfiguration;
 
-    final private String testFilePath = "content/file.txt";
+    final protected String testFilePath = "content/file.txt";
 
     private DefaultFSLocalRepositoryStorage localRepositoryStorageUnderTest;
 
-    private long originalLastAccessTime;
+    protected long originalLastAccessTime;
 
     final private DummyRepositoryItemUidFactory repositoryItemUidFactory = new DummyRepositoryItemUidFactory();
 
@@ -148,8 +148,9 @@ public abstract class AttributeStoragePerformanceTestSupport
         // prime the retrieve
         ResourceStoreRequest resourceRequest = new ResourceStoreRequest( testFilePath );
         originalLastAccessTime = localRepositoryStorageUnderTest.retrieveItem( repository, resourceRequest ).getLastRequested();
+        Thread.sleep( 1 );
     }
-    
+
     public abstract AttributeStorage getAttributeStorage();
 
     //////////////
@@ -235,18 +236,18 @@ public abstract class AttributeStoragePerformanceTestSupport
         MatcherAssert.assertThat( storageItem.getLastRequested(), Matchers.equalTo( originalLastAccessTime ) );
     }
 
-    private void writeEntryToAttributeStorage( String path )
+    protected void writeEntryToAttributeStorage( String path )
     {
         StorageFileItem storageFileItem = new DefaultStorageFileItem( repository, new ResourceStoreRequest( path ), true, true, getContentLocator() );
 
         storageFileItem.getAttributes().put( SHA1_ATTRIBUTE_KEY, SHA1_ATTRIBUTE_VALUE );
         storageFileItem.getAttributes().put( "digest.md5", "f62472816fb17de974a87513e2257d63" );
         storageFileItem.getAttributes().put( "request.address", "127.0.0.1" );
-
+        
         attributeStorage.putAttribute( storageFileItem );
     }
 
-    private AbstractStorageItem getStorageItemFromAttributeStore( String path )
+    protected AbstractStorageItem getStorageItemFromAttributeStore( String path )
     {
         RepositoryItemUid repositoryItemUid = new TestRepositoryItemUid(repositoryItemUidFactory, repository, path );
 
