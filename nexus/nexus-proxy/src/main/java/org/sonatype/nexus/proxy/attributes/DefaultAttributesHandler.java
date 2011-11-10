@@ -44,6 +44,7 @@ import org.sonatype.nexus.proxy.item.StorageFileItem;
 import org.sonatype.nexus.proxy.item.StorageItem;
 import org.sonatype.nexus.proxy.repository.Repository;
 import org.sonatype.nexus.proxy.storage.local.fs.FileContentLocator;
+import org.sonatype.nexus.util.SystemPropertiesHelper;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -59,6 +60,9 @@ import javax.inject.Singleton;
 public class DefaultAttributesHandler
     implements AttributesHandler
 {
+
+    private int touchLastRequestedDelay = SystemPropertiesHelper.getInteger( "nexus.ls.file.touchLastRequested.delay", 1 );
+
     private Logger logger = LoggerFactory.getLogger( DefaultAttributesHandler.class );
 
     /**
@@ -276,7 +280,12 @@ public class DefaultAttributesHandler
         // TODO: touch it only if this is user-originated request
         // Currently, we test for IP address presence, since that makes sure it is user request (from REST API) and not
         // a request from "internals" (ie. a running task).
-        if ( request.getRequestContext().containsKey( AccessManager.REQUEST_REMOTE_ADDRESS ) )
+        // TODO: maybe the other nexus.ls.file.touchLastRequested* props should be moved here
+        // Delay the frequency of writes to the value of 'touchLastRequestedDelay'
+
+        if ( ( timestamp < storageItem.getLastRequested() || // allow setting the timestamp back for tests TODO: tests should be updated
+            (storageItem.getLastRequested() + touchLastRequestedDelay ) <= timestamp ) &&
+            request.getRequestContext().containsKey( AccessManager.REQUEST_REMOTE_ADDRESS ) )
         {
             storageItem.setLastRequested( timestamp );
 
@@ -297,7 +306,7 @@ public class DefaultAttributesHandler
      * Expand custom item attributes.
      * 
      * @param item the item
-     * @param inputStream the input stream
+     * @param content the content locator of the item
      */
     protected void expandCustomItemAttributes( StorageItem item, ContentLocator content )
     {
@@ -430,6 +439,15 @@ public class DefaultAttributesHandler
             }
         }
         // result.setDate( LocalStorageItem.LOCAL_ITEM_LAST_INSPECTED_KEY, new Date() );
+    }
+
+    /**
+     * Test Access only!
+     * TODO: add @TestAccessible
+     */
+    public void setTouchLastRequestedDelay( int delay )
+    {
+        this.touchLastRequestedDelay = delay;
     }
 
 }
